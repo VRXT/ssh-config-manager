@@ -1,7 +1,7 @@
 {
   "name": "ssh-config-manager",
   "displayName": "SSH Config Manager",
-  "description": "Manage your ssh_config from a GUI: groups, icons, colors, tags and notes — all stored as comments inside the config file itself.",
+  "description": "SSH manager for VS Code: organize your ssh_config in a side bar with groups, icons, colors, tags, notes and favorites, stored as comments inside the config file itself. Connect in a terminal or via Remote-SSH.",
   "version": "0.4.1",
   "publisher": "vrxt",
   "author": {
@@ -23,13 +23,24 @@
   "homepage": "https://github.com/VRXT/ssh-config-manager#readme",
   "keywords": [
     "ssh",
+    "ssh manager",
     "ssh config",
+    "ssh config manager",
     "ssh_config",
-    "remote-ssh",
-    "hosts",
-    "servers",
+    "ssh hosts",
+    "ssh client",
+    "ssh connection",
     "connection manager",
-    "terminal"
+    "host manager",
+    "server manager",
+    "remote-ssh",
+    "remote",
+    "terminal",
+    "servers",
+    "hosts",
+    "devops",
+    "sysadmin",
+    "homelab"
   ],
   "engines": {
     "vscode": "^1.85.0"
