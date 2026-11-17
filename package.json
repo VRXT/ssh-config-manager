@@ -1,0 +1,194 @@
+{
+  "name": "ssh-config-manager",
+  "displayName": "SSH Config Manager",
+  "description": "Manage your ssh_config from a GUI: groups, icons, colors, tags and notes — all stored as comments inside the config file itself.",
+  "version": "0.4.0",
+  "publisher": "vrxt",
+  "author": {
+    "name": "Mushari Alshqar"
+  },
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#0b3d91",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VRXT/ssh-config-manager.git"
+  },
+  "bugs": {
+    "url": "https://github.com/VRXT/ssh-config-manager/issues"
+  },
+  "homepage": "https://github.com/VRXT/ssh-config-manager#readme",
+  "keywords": [
+    "ssh",
+    "ssh config",
+    "ssh_config",
+    "remote-ssh",
+    "hosts",
+    "servers",
+    "connection manager",
+    "terminal"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "extensionKind": ["ui"],
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sshManager",
+          "title": "SSH Config Manager",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "sshManager": [
+        {
+          "id": "sshManager.hosts",
+          "name": "Hosts"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "sshManager.hosts",
+        "contents": "No hosts found in your SSH config.\n[Add Host](command:sshManager.addHost)\n[Open Config File](command:sshManager.openConfig)"
+      }
+    ],
+    "configuration": {
+      "title": "SSH Config Manager",
+      "properties": {
+        "sshManager.configFile": {
+          "type": "string",
+          "default": "~/.ssh/config",
+          "description": "Path of the SSH config file to manage. Every other setting lives inside that file as a '#@ssh-manager' comment."
+        }
+      }
+    },
+    "keybindings": [
+      { "command": "sshManager.quickConnect", "key": "ctrl+alt+s", "mac": "cmd+alt+s" },
+      { "command": "sshManager.moveUp", "key": "alt+up", "when": "focusedView == sshManager.hosts" },
+      { "command": "sshManager.moveDown", "key": "alt+down", "when": "focusedView == sshManager.hosts" }
+    ],
+    "commands": [
+      { "command": "sshManager.addHost", "title": "Add Host", "category": "SSH Manager", "icon": "$(add)" },
+      { "command": "sshManager.addGroup", "title": "Add Group", "category": "SSH Manager", "icon": "$(new-folder)" },
+      { "command": "sshManager.addSection", "title": "Add Sub-group", "category": "SSH Manager", "icon": "$(new-folder)" },
+      { "command": "sshManager.refresh", "title": "Refresh", "category": "SSH Manager", "icon": "$(refresh)" },
+      { "command": "sshManager.filter", "title": "Filter Hosts", "category": "SSH Manager", "icon": "$(search)" },
+      { "command": "sshManager.clearFilter", "title": "Clear Filter", "category": "SSH Manager", "icon": "$(clear-all)" },
+      { "command": "sshManager.openConfig", "title": "Open Config File", "category": "SSH Manager", "icon": "$(go-to-file)" },
+      { "command": "sshManager.settings", "title": "Settings (stored in config file)", "category": "SSH Manager", "icon": "$(gear)" },
+      { "command": "sshManager.quickConnect", "title": "Connect to Host…", "category": "SSH Manager", "icon": "$(plug)" },
+      { "command": "sshManager.remoteSpacing", "title": "Remote-SSH Picker Spacing…", "category": "SSH Manager" },
+      { "command": "sshManager.connect", "title": "Connect (default action)", "category": "SSH Manager" },
+      { "command": "sshManager.connectTerminal", "title": "Connect in Terminal", "category": "SSH Manager", "icon": "$(terminal)" },
+      { "command": "sshManager.connectWindow", "title": "Open in This Window (Remote-SSH)", "category": "SSH Manager", "icon": "$(remote)" },
+      { "command": "sshManager.connectNewWindow", "title": "Open in New Window (Remote-SSH)", "category": "SSH Manager", "icon": "$(empty-window)" },
+      { "command": "sshManager.editHost", "title": "Edit Host", "category": "SSH Manager", "icon": "$(edit)" },
+      { "command": "sshManager.duplicateHost", "title": "Duplicate Host", "category": "SSH Manager" },
+      { "command": "sshManager.deleteHost", "title": "Delete Host", "category": "SSH Manager" },
+      { "command": "sshManager.moveHost", "title": "Move to Group…", "category": "SSH Manager" },
+      { "command": "sshManager.moveSection", "title": "Move to Project…", "category": "SSH Manager" },
+      { "command": "sshManager.moveUp", "title": "Move Up", "category": "SSH Manager", "icon": "$(arrow-up)" },
+      { "command": "sshManager.moveDown", "title": "Move Down", "category": "SSH Manager", "icon": "$(arrow-down)" },
+      { "command": "sshManager.toggleFavorite", "title": "Toggle Favorite", "category": "SSH Manager", "icon": "$(star)" },
+      { "command": "sshManager.toggleEnabled", "title": "Enable / Disable", "category": "SSH Manager", "icon": "$(circle-slash)" },
+      { "command": "sshManager.setProvider", "title": "Set Provider…", "category": "SSH Manager" },
+      { "command": "sshManager.setIcon", "title": "Set Icon…", "category": "SSH Manager" },
+      { "command": "sshManager.setColor", "title": "Set Color…", "category": "SSH Manager" },
+      { "command": "sshManager.copySsh", "title": "Copy ssh Command", "category": "SSH Manager" },
+      { "command": "sshManager.copyHostName", "title": "Copy HostName / IP", "category": "SSH Manager" },
+      { "command": "sshManager.reveal", "title": "Show in Config File", "category": "SSH Manager" },
+      { "command": "sshManager.renameGroup", "title": "Rename", "category": "SSH Manager" },
+      { "command": "sshManager.deleteGroup", "title": "Delete (only when empty)", "category": "SSH Manager" }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "sshManager.connect", "when": "false" },
+        { "command": "sshManager.addSection", "when": "false" },
+        { "command": "sshManager.renameGroup", "when": "false" },
+        { "command": "sshManager.moveUp", "when": "false" },
+        { "command": "sshManager.moveDown", "when": "false" },
+        { "command": "sshManager.moveSection", "when": "false" },
+        { "command": "sshManager.deleteGroup", "when": "false" },
+        { "command": "sshManager.setIcon", "when": "false" },
+        { "command": "sshManager.setColor", "when": "false" },
+        { "command": "sshManager.reveal", "when": "false" },
+        { "command": "sshManager.duplicateHost", "when": "false" },
+        { "command": "sshManager.moveHost", "when": "false" },
+        { "command": "sshManager.toggleFavorite", "when": "false" },
+        { "command": "sshManager.copyHostName", "when": "false" }
+      ],
+      "view/title": [
+        { "command": "sshManager.quickConnect", "when": "view == sshManager.hosts", "group": "navigation@0" },
+        { "command": "sshManager.addHost", "when": "view == sshManager.hosts", "group": "navigation@1" },
+        { "command": "sshManager.addGroup", "when": "view == sshManager.hosts", "group": "navigation@2" },
+        { "command": "sshManager.filter", "when": "view == sshManager.hosts && !sshManager.filtered", "group": "navigation@3" },
+        { "command": "sshManager.clearFilter", "when": "view == sshManager.hosts && sshManager.filtered", "group": "navigation@3" },
+        { "command": "sshManager.refresh", "when": "view == sshManager.hosts", "group": "navigation@4" },
+        { "command": "sshManager.openConfig", "when": "view == sshManager.hosts", "group": "z@1" },
+        { "command": "sshManager.settings", "when": "view == sshManager.hosts", "group": "z@2" },
+        { "command": "sshManager.remoteSpacing", "when": "view == sshManager.hosts", "group": "z@3" }
+      ],
+      "view/item/context": [
+        { "command": "sshManager.connectTerminal", "when": "view == sshManager.hosts && viewItem =~ /^host/", "group": "inline@1" },
+        { "command": "sshManager.connectNewWindow", "when": "view == sshManager.hosts && viewItem =~ /^host/", "group": "inline@2" },
+        { "command": "sshManager.editHost", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern)$/", "group": "inline@3" },
+
+        { "command": "sshManager.connectTerminal", "when": "view == sshManager.hosts && viewItem =~ /^host/", "group": "1_connect@1" },
+        { "command": "sshManager.connectWindow", "when": "view == sshManager.hosts && viewItem =~ /^host/", "group": "1_connect@2" },
+        { "command": "sshManager.connectNewWindow", "when": "view == sshManager.hosts && viewItem =~ /^host/", "group": "1_connect@3" },
+
+        { "command": "sshManager.editHost", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern)$/", "group": "2_edit@1" },
+        { "command": "sshManager.duplicateHost", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern)$/", "group": "2_edit@2" },
+        { "command": "sshManager.moveHost", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern)$/", "group": "2_edit@3" },
+
+        { "command": "sshManager.toggleFavorite", "when": "view == sshManager.hosts && viewItem == host", "group": "3_look@1" },
+        { "command": "sshManager.toggleFavorite", "when": "view == sshManager.hosts && viewItem == host", "group": "inline@0" },
+        { "command": "sshManager.toggleEnabled", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern|group|section)$/", "group": "3_look@0" },
+        { "command": "sshManager.setProvider", "when": "view == sshManager.hosts && viewItem == host", "group": "3_look@1" },
+        { "command": "sshManager.setIcon", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern|group|section)$/", "group": "3_look@2" },
+        { "command": "sshManager.setColor", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern|group|section)$/", "group": "3_look@3" },
+
+        { "command": "sshManager.copySsh", "when": "view == sshManager.hosts && viewItem =~ /^host/", "group": "4_copy@1" },
+        { "command": "sshManager.copyHostName", "when": "view == sshManager.hosts && viewItem =~ /^host/", "group": "4_copy@2" },
+        { "command": "sshManager.reveal", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern|group|section)/", "group": "4_copy@3" },
+
+        { "command": "sshManager.deleteHost", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern)$/", "group": "9_delete@1" },
+
+        { "command": "sshManager.addHost", "when": "view == sshManager.hosts && viewItem =~ /^(group|section)$/", "group": "inline@1" },
+        { "command": "sshManager.addHost", "when": "view == sshManager.hosts && viewItem =~ /^(group|section)$/", "group": "1_add@1" },
+        { "command": "sshManager.addSection", "when": "view == sshManager.hosts && viewItem == group", "group": "1_add@2" },
+        { "command": "sshManager.renameGroup", "when": "view == sshManager.hosts && viewItem =~ /^(group|section)$/", "group": "2_edit@1" },
+        { "command": "sshManager.moveSection", "when": "view == sshManager.hosts && viewItem == section", "group": "2_edit@2" },
+        { "command": "sshManager.moveUp", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern|group|section)$/", "group": "2_move@1" },
+        { "command": "sshManager.moveDown", "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern|group|section)$/", "group": "2_move@2" },
+        { "command": "sshManager.deleteGroup", "when": "view == sshManager.hosts && viewItem =~ /^(group|section)$/", "group": "9_delete@1" }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node test/parser.test.js",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0",
+    "typescript": "^5.4.0"
+  }
+}
