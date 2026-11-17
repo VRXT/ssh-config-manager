@@ -8,6 +8,7 @@
 - Folders open automatically while searching
 - **Set Up SSH Key…** on a host: generate a new ed25519 key or pick an existing one, add it as
   `IdentityFile`, and copy it to the server's `authorized_keys` in a terminal
+- Host and group colors show in the Connect picker as a colored dot (VS Code cannot color icons there)
 - The **SSH** status-bar button is created first at startup with a fixed id, so it always shows,
   and can be hidden from the status bar's right-click menu
 

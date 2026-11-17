@@ -25,6 +25,16 @@ export const COLORS: Record<string, string> = {
   purple: 'charts.purple',
 };
 
+/** The same six colors as round emoji, for places VS Code cannot color an icon (quick picks). */
+export const COLOR_DOTS: Record<string, string> = {
+  red: '\u{1F534}',
+  orange: '\u{1F7E0}',
+  yellow: '\u{1F7E1}',
+  green: '\u{1F7E2}',
+  blue: '\u{1F535}',
+  purple: '\u{1F7E3}',
+};
+
 const OFF_COLOR = new vscode.ThemeColor('disabledForeground');
 // not the `application/vnd.code.tree.<viewId>` type: VS Code fills that one with its own data
 const MIME = 'application/vnd.ssh-config-manager.items';

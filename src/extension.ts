@@ -12,7 +12,7 @@ import { openHostEditor } from './hostEditor';
 import { describeFilter, emptyFilter } from './search';
 import { SearchViewProvider } from './searchView';
 import { Store, collapseHome, expandHome } from './store';
-import { COLORS, HostTree, ICONS, Node, autoIcon, hostDetail, hostSummary, isFav } from './tree';
+import { COLORS, COLOR_DOTS, HostTree, ICONS, Node, autoIcon, hostDetail, hostSummary, isFav } from './tree';
 
 const SETTINGS: { key: string; label: string; detail: string; values: { value: string; label: string }[] }[] = [
   {
@@ -120,18 +120,21 @@ export function activate(context: vscode.ExtensionContext): void {
     //           host
     const indent = (depth: number) => '  '.repeat(depth);
     const safe = (icon: string, fallback: string) => (/^[a-z0-9-]+$/.test(icon) ? icon : fallback);
+    // Quick picks cannot color an icon (VS Code ignores ThemeIcon colors there), so a colored dot
+    // next to the name stands in for the color the host or group has in the tree.
+    const dot = (color?: string) => (color && COLOR_DOTS[color] ? COLOR_DOTS[color] + ' ' : '');
     const row = (h: Host, depth: number): HostItem => {
       const icon = h.attrs.icon || (doc.settings.autoicon === 'off' ? 'server' : autoIcon(h));
       const tags = hostTags(h).map(t => '#' + t).join(' ');
       return {
-        label: `${indent(depth)}$(${safe(icon, 'server')}) ${h.alias}`,
+        label: `${indent(depth)}$(${safe(icon, 'server')}) ${dot(h.attrs.color)}${h.alias}`,
         description: [hostSummary(h), tags].filter(Boolean).join('  '),
         detail: h.attrs.note ? indent(depth) + h.attrs.note : undefined,
         h,
       };
     };
-    const header = (title: string, icon: string, depth: number, count: number): HostItem => ({
-      label: `${indent(depth)}$(${icon}) ${title}`,
+    const header = (title: string, icon: string, depth: number, count: number, color?: string): HostItem => ({
+      label: `${indent(depth)}$(${icon}) ${dot(color)}${title}`,
       description: String(count),
     });
     const gap = () => {
@@ -142,7 +145,13 @@ export function activate(context: vscode.ExtensionContext): void {
         out.push({ label: '', kind: vscode.QuickPickItemKind.Separator });
       }
     };
-    const block = (title: string, icon: string, direct: Host[], sections: { title: string; icon: string; hosts: Host[] }[]) => {
+    const block = (
+      title: string,
+      icon: string,
+      direct: Host[],
+      sections: { title: string; icon: string; color?: string; hosts: Host[] }[],
+      color?: string,
+    ) => {
       const own = direct.filter(usable);
       const subs = sections.map(s => ({ ...s, hosts: s.hosts.filter(usable) })).filter(s => s.hosts.length);
       const total = own.length + subs.reduce((n, s) => n + s.hosts.length, 0);
@@ -150,9 +159,9 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
       gap();
-      out.push(header(title, icon, 0, total), ...own.map(h => row(h, 1)));
+      out.push(header(title, icon, 0, total, color), ...own.map(h => row(h, 1)));
       for (const s of subs) {
-        out.push(header(s.title, s.icon, 1, s.hosts.length), ...s.hosts.map(h => row(h, 2)));
+        out.push(header(s.title, s.icon, 1, s.hosts.length, s.color), ...s.hosts.map(h => row(h, 2)));
       }
     };
 
@@ -170,7 +179,8 @@ export function activate(context: vscode.ExtensionContext): void {
         g.title,
         safe(g.attrs.icon || 'folder-library', 'folder-library'),
         only ? g.sections[0].hosts : g.hosts,
-        only ? [] : g.sections.map(x => ({ title: x.title, icon: safe(x.attrs.icon || 'folder', 'folder'), hosts: x.hosts })),
+        only ? [] : g.sections.map(x => ({ title: x.title, icon: safe(x.attrs.icon || 'folder', 'folder'), color: x.attrs.color, hosts: x.hosts })),
+        g.attrs.color,
       );
     }
     if (!editable) {
