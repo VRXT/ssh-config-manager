@@ -1,27 +1,30 @@
 name: Release
 
 # Runs when you push a version tag, e.g.:
-#   npm version patch        (bumps package.json and creates tag v0.4.1)
+#   npm version patch        (bumps package.json and creates tag v0.4.2)
 #   git push --follow-tags
 #
-# It builds the .vsix, attaches it to a GitHub Release, and publishes to the
-# VS Code Marketplace if the VSCE_PAT repository secret is set.
+# It builds the .vsix, attaches it to a GitHub Release, and publishes it to the
+# VS Code Marketplace with trusted publishing (OIDC) — no token or secret needed.
+# The Marketplace policy for publisher VRXT must name: repository VRXT/ssh-config-manager,
+# workflow release.yml, environment production.
 on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: write # needed to create the GitHub Release
-
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment: production # must match the Marketplace trusted publishing policy
+    permissions:
+      contents: write # create the GitHub Release
+      id-token: write # let vsce request the OIDC token for the Marketplace
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22 # @vscode/vsce 4 needs Node 22+
           cache: npm
 
       - name: Check tag matches package.json version
@@ -47,12 +50,5 @@ jobs:
           files: ssh-config-manager-*.vsix
           generate_release_notes: true
 
-      - name: Publish to VS Code Marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: |
-          if [ -z "$VSCE_PAT" ]; then
-            echo "VSCE_PAT secret not set; skipping Marketplace publish."
-            exit 0
-          fi
-          npx vsce publish --packagePath ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
+      - name: Publish to VS Code Marketplace (trusted publishing)
+        run: npx vsce publish --oidc --packagePath ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
