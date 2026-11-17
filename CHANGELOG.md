@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 — first public release
+## 0.4.1 — first public release
 
 - Side-bar tree of hosts by group and sub-group, with icons, colors, tags, notes and favorites
 - Add / edit hosts in a form; duplicate, move, reorder (drag & drop or Alt+↑/↓), delete
