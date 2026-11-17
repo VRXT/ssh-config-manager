@@ -20,11 +20,11 @@ jobs:
       contents: write # create the GitHub Release
       id-token: write # let vsce request the OIDC token for the Marketplace
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22 # @vscode/vsce 4 needs Node 22+
+          node-version: 24
           cache: npm
 
       - name: Check tag matches package.json version
@@ -45,7 +45,7 @@ jobs:
         run: npx vsce package --out ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: ssh-config-manager-*.vsix
           generate_release_notes: true
