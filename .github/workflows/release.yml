@@ -1,0 +1,58 @@
+name: Release
+
+# Runs when you push a version tag, e.g.:
+#   npm version patch        (bumps package.json and creates tag v0.4.1)
+#   git push --follow-tags
+#
+# It builds the .vsix, attaches it to a GitHub Release, and publishes to the
+# VS Code Marketplace if the VSCE_PAT repository secret is set.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # needed to create the GitHub Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Check tag matches package.json version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version v$VERSION"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile and test
+        run: npm test
+
+      - name: Package extension
+        run: npx vsce package --out ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ssh-config-manager-*.vsix
+          generate_release_notes: true
+
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "$VSCE_PAT" ]; then
+            echo "VSCE_PAT secret not set; skipping Marketplace publish."
+            exit 0
+          fi
+          npx vsce publish --packagePath ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
