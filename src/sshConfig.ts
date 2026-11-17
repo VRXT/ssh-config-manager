@@ -106,6 +106,8 @@ export interface HostForm {
   fav: boolean;
   /** provider id or free text, '' = detect automatically */
   provider: string;
+  /** folder on the server opened on connect ('' = none) */
+  folder: string;
   /** container id, '' = ungrouped */
   container: string;
 }
@@ -562,7 +564,7 @@ const SINGLE = ['hostname', 'user', 'port', 'identitiesonly', 'proxyjump', 'forw
 export function emptyForm(container = ''): HostForm {
   return {
     alias: '', hostName: '', user: '', port: '', identityFiles: [], identitiesOnly: '', proxyJump: '',
-    forwardAgent: '', extra: '', icon: '', color: '', tags: '', note: '', fav: false, provider: '', container,
+    forwardAgent: '', extra: '', icon: '', color: '', tags: '', note: '', fav: false, provider: '', folder: '', container,
   };
 }
 
@@ -603,6 +605,7 @@ export function hostToForm(doc: Doc, host: Host): HostForm {
     note: host.attrs.note ?? '',
     fav: !!host.attrs.fav && host.attrs.fav !== '0',
     provider: host.attrs.provider ?? '',
+    folder: host.attrs.folder ?? '',
     container: host.container?.id ?? '',
   };
 }
@@ -623,6 +626,7 @@ function buildBlock(form: HostForm, baseAttrs: Attrs, hostIndent: string, optInd
   setAttr(attrs, 'note', form.note.replace(/\s*[\r\n]+\s*/g, ' ').trim());
   setAttr(attrs, 'fav', form.fav ? '1' : '');
   setAttr(attrs, 'provider', (form.provider ?? '').trim());
+  setAttr(attrs, 'folder', (form.folder ?? '').trim());
 
   const out: string[] = [];
   if (Object.keys(attrs).length) {

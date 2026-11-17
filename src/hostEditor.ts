@@ -2,6 +2,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { HostForm, PROVIDERS, addHost, allContainers, containerPath, emptyForm, findHost, hostToForm, providerOf, updateHost } from './sshConfig';
+import { folderProblem } from './remote';
 import { Store, collapseHome } from './store';
 import { COLORS, ICONS } from './tree';
 
@@ -48,6 +49,10 @@ export function openHostEditor(store: Store, hostId: string | undefined, contain
       }
       if (f.port.trim() && !/^\d+$/.test(f.port.trim())) {
         return fail('Port must be a number.');
+      }
+      const folderError = folderProblem(f.folder ?? '');
+      if (folderError) {
+        return fail(`Remote folder: ${folderError}.`);
       }
       store.reload();
       if (store.doc.hosts.some(h => h.alias === alias && h.id !== hostId)) {
@@ -135,6 +140,7 @@ function html(webview: vscode.Webview, data: unknown): string {
       <div><label for="forwardAgent">ForwardAgent</label>
         <select id="forwardAgent"><option value="">(default)</option><option>yes</option><option>no</option></select></div>
       <div class="full"><label for="proxyJump">ProxyJump <small>(jump host alias)</small></label><input type="text" id="proxyJump" spellcheck="false" autocomplete="off"></div>
+      <div class="full"><label for="folder">Remote folder <small>(opened directly when you connect, e.g. /var/www/html)</small></label><input type="text" id="folder" spellcheck="false" autocomplete="off" placeholder="/home/user/project"></div>
       <div class="full">
         <label for="extra">Other options <small>(raw ssh_config lines, e.g. <code>LocalForward 8080 localhost:80</code>; <code>#</code> comments are kept)</small></label>
         <textarea id="extra" rows="4" spellcheck="false"></textarea>
@@ -188,7 +194,7 @@ function html(webview: vscode.Webview, data: unknown): string {
     $('colors').append(label);
   }
 
-  for (const k of ['alias', 'hostName', 'user', 'port', 'proxyJump', 'extra', 'tags', 'note', 'container', 'icon', 'provider', 'identitiesOnly', 'forwardAgent']) $(k).value = f[k] ?? '';
+  for (const k of ['alias', 'hostName', 'user', 'port', 'proxyJump', 'extra', 'tags', 'note', 'folder', 'container', 'icon', 'provider', 'identitiesOnly', 'forwardAgent']) $(k).value = f[k] ?? '';
   $('identityFiles').value = f.identityFiles.join('\\n');
   $('fav').checked = !!f.fav;
   (document.querySelector('input[name=color][value="' + (data.colors.includes(f.color) ? f.color : '') + '"]')).checked = true;
@@ -204,7 +210,7 @@ function html(webview: vscode.Webview, data: unknown): string {
     e.preventDefault();
     $('error').style.display = 'none';
     const form = { identityFiles: lines(), fav: $('fav').checked, color: document.querySelector('input[name=color]:checked').value };
-    for (const k of ['alias', 'hostName', 'user', 'port', 'proxyJump', 'extra', 'tags', 'note', 'container', 'icon', 'provider', 'identitiesOnly', 'forwardAgent']) form[k] = $(k).value;
+    for (const k of ['alias', 'hostName', 'user', 'port', 'proxyJump', 'extra', 'tags', 'note', 'folder', 'container', 'icon', 'provider', 'identitiesOnly', 'forwardAgent']) form[k] = $(k).value;
     vscode.postMessage({ type: 'save', form });
   });
   window.addEventListener('message', e => {

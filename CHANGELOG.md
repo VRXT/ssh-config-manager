@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Remote folder** per host (`folder=` on the `#@host` line, set in the form or with *Set Remote Folder…*):
+  Open in Window goes straight into that folder on the server, and Connect in Terminal starts there
+
 ## 0.5.1
 
 - Host and group colors show in the Connect picker as a colored dot (VS Code cannot color icons there)

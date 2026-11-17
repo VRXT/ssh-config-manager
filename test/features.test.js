@@ -7,6 +7,7 @@ const path = require('path');
 const c = require('../out/sshConfig');
 const s = require('../out/search');
 const k = require('../out/keys');
+const r = require('../out/remote');
 
 const SAMPLE = `Host *
     ServerAliveInterval 30
@@ -111,6 +112,39 @@ test('install command: quoting per platform', () => {
   assert.ok(!/\$/.test(win), 'nothing PowerShell would expand');
 });
 
+test('remote folder: saved as folder= on the #@host line, searchable, cleared when empty', () => {
+  const d = P(SAMPLE);
+  const nas = d.hosts.find(h => h.alias === 'nas');
+  const f = c.hostToForm(d, nas);
+  assert.strictEqual(f.folder, '');
+  const out = c.updateHost(d, nas.id, { ...f, folder: ' /srv/media files ' });
+  assert.ok(out.includes('#@host folder="/srv/media files"\nHost nas\n'));
+  const nas2 = P(out).hosts.find(h => h.alias === 'nas');
+  assert.strictEqual(nas2.attrs.folder, '/srv/media files');
+  assert.strictEqual(c.hostToForm(P(out), nas2).folder, '/srv/media files');
+  assert.deepStrictEqual(shown(P(out), { text: 'media' }), ['nas']);
+  const back = c.updateHost(P(out), nas2.id, { ...c.hostToForm(P(out), nas2), folder: '' });
+  assert.strictEqual(back, SAMPLE, 'clearing it restores the file exactly');
+});
+
+test('remote folder: only absolute paths without shell-special characters', () => {
+  assert.strictEqual(r.folderProblem(''), undefined);
+  assert.strictEqual(r.folderProblem('/var/www/html'), undefined);
+  assert.strictEqual(r.folderProblem('/home/me/my project'), undefined);
+  assert.ok(r.folderProblem('~/project'));
+  assert.ok(r.folderProblem('project'));
+  for (const bad of ['/a"b', "/a'b", '/a$b', '/a`b', '/a\\b', '/a\nb']) {
+    assert.ok(r.folderProblem(bad), bad);
+  }
+});
+
+test('remote folder: terminal starts there, unless the host has a RemoteCommand', () => {
+  assert.strictEqual(r.sshInFolder('ssh nas', '', false), 'ssh nas');
+  assert.strictEqual(r.sshInFolder('ssh nas', '/srv/app', true), 'ssh nas', 'ssh refuses a command next to RemoteCommand');
+  assert.strictEqual(r.sshInFolder('ssh nas', '~/x', false), 'ssh nas', 'invalid folders are ignored');
+  assert.strictEqual(r.sshInFolder("ssh -F '/my cfg' nas", '/srv/my app', false), `ssh -t -F '/my cfg' nas 'cd "/srv/my app" && exec $SHELL -l'`);
+});
+
 // The rest needs ssh-keygen and a POSIX shell; skipped where they are missing.
 const has = cmd => cp.spawnSync(process.platform === 'win32' ? 'where' : 'which', [cmd]).status === 0;
 if (process.platform !== 'win32' && has('ssh-keygen')) {
@@ -148,6 +182,24 @@ if (process.platform !== 'win32' && has('ssh-keygen')) {
       assert.strictEqual(fs.readFileSync(path.join(fresh, '.ssh', 'authorized_keys'), 'utf8').trim(), pub);
       assert.strictEqual(fs.statSync(path.join(fresh, '.ssh')).mode & 0o077, 0, '~/.ssh is 700');
       assert.strictEqual(fs.statSync(path.join(fresh, '.ssh', 'authorized_keys')).mode & 0o077, 0, 'authorized_keys is 600');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+if (process.platform !== 'win32') {
+  test('remote folder: the server-side part cds into a folder with spaces and starts the shell there', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sshm-folder-'));
+    try {
+      const target = path.join(dir, 'my app');
+      fs.mkdirSync(target);
+      const cmd = r.sshInFolder('ssh x', target, false);
+      const remote = cmd.slice('ssh -t x '.length); // what ssh hands to the server's shell
+      const shell = path.join(dir, 'fake-shell');
+      fs.writeFileSync(shell, '#!/bin/sh\npwd\n', { mode: 0o755 }); // stands in for the login shell
+      const out = cp.execSync(`sh -c ${remote}`, { env: { ...process.env, SHELL: shell } }).toString().trim();
+      assert.strictEqual(fs.realpathSync(out), fs.realpathSync(target));
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

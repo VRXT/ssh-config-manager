@@ -262,6 +262,12 @@
         "category": "SSH Manager"
       },
       {
+        "command": "sshManager.setFolder",
+        "title": "Set Remote Folder…",
+        "category": "SSH Manager",
+        "icon": "$(folder-opened)"
+      },
+      {
         "command": "sshManager.setupKey",
         "title": "Set Up SSH Key…",
         "category": "SSH Manager",
@@ -474,6 +480,11 @@
           "command": "sshManager.setColor",
           "when": "view == sshManager.hosts && viewItem =~ /^(host|pattern|group|section)$/",
           "group": "3_look@3"
+        },
+        {
+          "command": "sshManager.setFolder",
+          "when": "view == sshManager.hosts && viewItem == host",
+          "group": "1_connect@4"
         },
         {
           "command": "sshManager.setupKey",

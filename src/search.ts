@@ -34,6 +34,7 @@ function haystack(h: Host): string {
     ...h.options.map(o => `${o.key} ${o.value}`),
     h.attrs.tags,
     h.attrs.note,
+    h.attrs.folder,
     containerPath(h.container),
     providerOf(h)?.label,
   ]

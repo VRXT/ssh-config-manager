@@ -10,6 +10,7 @@ import {
 } from './sshConfig';
 import { openHostEditor } from './hostEditor';
 import { describeFilter, emptyFilter } from './search';
+import { folderProblem, sshInFolder } from './remote';
 import { SearchViewProvider } from './searchView';
 import { Store, collapseHome, expandHome } from './store';
 import { COLORS, COLOR_DOTS, HostTree, ICONS, Node, autoIcon, hostDetail, hostSummary, isFav } from './tree';
@@ -246,7 +247,8 @@ export function activate(context: vscode.ExtensionContext): void {
       );
       return;
     }
-    await runLocal(h.alias, cmd);
+    // start in the host's remote folder when it has one
+    await runLocal(h.alias, sshInFolder(cmd, h.attrs.folder ?? '', !!option(h, 'RemoteCommand')));
   };
 
   const connectRemote = async (h: Host, reuseWindow: boolean) => {
@@ -262,6 +264,13 @@ export function activate(context: vscode.ExtensionContext): void {
       if (pick) {
         connectTerminal(h);
       }
+      return;
+    }
+    const folder = (h.attrs.folder ?? '').trim();
+    if (folder && !folderProblem(folder)) {
+      // straight into the host's folder instead of an empty remote window
+      const uri = vscode.Uri.from({ scheme: 'vscode-remote', authority: `ssh-remote+${name}`, path: folder });
+      await vscode.commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: !reuseWindow });
       return;
     }
     await vscode.commands.executeCommand('vscode.newWindow', { remoteAuthority: `ssh-remote+${name}`, reuseWindow });
@@ -628,6 +637,24 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   // ---- SSH keys: make a new key or pick one, put it on the server, and use it for the host
+
+  reg('sshManager.setFolder', async node => {
+    const h = await pickHost(node, true);
+    if (!h || h.readonly) {
+      return;
+    }
+    const value = await vscode.window.showInputBox({
+      title: `Remote folder for ${h.alias}`,
+      prompt: 'Opened directly when you connect (window or terminal). Leave empty for none.',
+      value: h.attrs.folder ?? '',
+      placeHolder: '/var/www/html',
+      validateInput: v => folderProblem(v),
+    });
+    if (value === undefined) {
+      return;
+    }
+    await store.mutate(doc => setHostAttrs(doc, h.id, { folder: value.trim() || undefined }));
+  });
 
   reg('sshManager.setupKey', async node => {
     const h = await pickHost(node);

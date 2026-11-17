@@ -316,6 +316,9 @@ function tooltip(h: Host): vscode.MarkdownString {
   if (provider) {
     rows.push(['Provider', provider.auto ? `${provider.label} (detected)` : provider.label]);
   }
+  if (h.attrs.folder) {
+    rows.push(['Folder', h.attrs.folder]);
+  }
   for (const o of h.options) {
     if (!['hostname', 'user'].includes(o.key.toLowerCase())) {
       rows.push([o.key, o.value]);

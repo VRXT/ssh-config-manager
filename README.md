@@ -76,6 +76,16 @@ It goes through `ssh <host>`, so `User`, `Port`, `ProxyJump` and the rest of the
 on macOS, Linux and Windows, needs nothing installed on the server beyond a normal shell, and always
 runs on your computer — also from a window that is connected to a remote.
 
+### Open a folder directly
+
+Give a host a **remote folder** (in the edit form, or right-click → **Set Remote Folder…**), for
+example `/var/www/html`:
+
+- **Open in This / New Window** opens that folder on the server right away, instead of an empty window.
+- **Connect in Terminal** starts the shell in that folder.
+
+It is stored on the host's `#@host` line as `folder=/var/www/html`, so `ssh` ignores it.
+
 ### Connect your way
 
 Connect in a terminal, or open the host in this / a new window through Remote-SSH, from the inline
@@ -120,7 +130,7 @@ Host HOST-db01
 | `#@ssh-manager k=v …` | Extension settings: `sort` (`file`/`name`), `click` (`none`/`terminal`/`window`/`newWindow`/`edit`), `favorites` (`on`/`off`), `autoicon` (`on`/`off`), `remote-favorites` (`off`/`on`) |
 | `#@group NAME [icon= color=]` | Starts a group; runs until the next group. Quote names with spaces. |
 | `#@section NAME [icon= color=]` | Starts a sub-group inside the current group |
-| `#@host k=v …` | Must sit directly above a `Host` line: `icon`, `color`, `tags`, `note`, `fav`, `provider` |
+| `#@host k=v …` | Must sit directly above a `Host` line: `icon`, `color`, `tags`, `note`, `fav`, `provider`, `folder` |
 
 ### Disabled hosts and groups
 
