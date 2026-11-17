@@ -75,7 +75,10 @@ function html(webview: vscode.Webview): string {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style nonce="${nonce}">
-  body { padding: 8px 12px 10px 20px; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); }
+  /* no scrollbar: when the panel is shorter than its content it still scrolls with the wheel / trackpad */
+  html, body { scrollbar-width: none; }
+  ::-webkit-scrollbar { width: 0 !important; height: 0 !important; display: none; }
+  body { padding: 6px 12px 8px 20px; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); }
   .box { position: relative; }
   input { width: 100%; box-sizing: border-box; padding: 4px 24px 4px 6px; font: inherit;
     color: var(--vscode-input-foreground); background: var(--vscode-input-background);
