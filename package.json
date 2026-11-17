@@ -68,8 +68,15 @@
     "views": {
       "sshManager": [
         {
+          "type": "webview",
+          "id": "sshManager.search",
+          "name": "Search",
+          "initialSize": 2
+        },
+        {
           "id": "sshManager.hosts",
-          "name": "Hosts"
+          "name": "Hosts",
+          "initialSize": 5
         }
       ]
     },
@@ -133,7 +140,7 @@
       },
       {
         "command": "sshManager.filter",
-        "title": "Filter Hosts",
+        "title": "Search Hosts",
         "category": "SSH Manager",
         "icon": "$(search)"
       },
@@ -253,6 +260,12 @@
         "command": "sshManager.setColor",
         "title": "Set Color…",
         "category": "SSH Manager"
+      },
+      {
+        "command": "sshManager.setupKey",
+        "title": "Set Up SSH Key…",
+        "category": "SSH Manager",
+        "icon": "$(key)"
       },
       {
         "command": "sshManager.copySsh",
@@ -463,6 +476,11 @@
           "group": "3_look@3"
         },
         {
+          "command": "sshManager.setupKey",
+          "when": "view == sshManager.hosts && viewItem =~ /^host/",
+          "group": "4_key@1"
+        },
+        {
           "command": "sshManager.copySsh",
           "when": "view == sshManager.hosts && viewItem =~ /^host/",
           "group": "4_copy@1"
@@ -528,7 +546,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node test/parser.test.js",
+    "test": "npm run compile && node test/parser.test.js && node test/features.test.js",
     "vscode:prepublish": "npm run compile",
     "package": "vsce package",
     "publish": "vsce publish"

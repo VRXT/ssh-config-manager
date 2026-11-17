@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Container, Doc, Host, connectName, containerPath, findContainer, hostTags, isDisabled, moveGroup, moveHost, moveSection, option, parse, providerOf } from './sshConfig';
+import { HostFilter, emptyFilter, hostMatches, isFilterEmpty } from './search';
 import { Store } from './store';
 
 export type Node =
@@ -64,33 +65,41 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
 
   private readonly changed = new vscode.EventEmitter<Node | undefined | void>();
   readonly onDidChangeTreeData = this.changed.event;
-  private filter = '';
+  private filter: HostFilter = emptyFilter();
+  private readonly filterChanged = new vscode.EventEmitter<HostFilter>();
+  /** fires whenever the search text or a filter chip changes, from any place */
+  readonly onDidChangeFilter = this.filterChanged.event;
 
   constructor(private readonly store: Store) {
     store.onDidChange(() => this.changed.fire());
   }
 
-  setFilter(text: string): void {
-    this.filter = text.trim().toLowerCase();
-    vscode.commands.executeCommand('setContext', 'sshManager.filtered', !!this.filter);
+  setFilter(patch: Partial<HostFilter>): void {
+    this.filter = { ...this.filter, ...patch };
+    vscode.commands.executeCommand('setContext', 'sshManager.filtered', this.filtered);
     this.changed.fire();
+    this.filterChanged.fire(this.filter);
   }
 
-  get filterText(): string {
+  get currentFilter(): HostFilter {
     return this.filter;
+  }
+
+  get filtered(): boolean {
+    return !isFilterEmpty(this.filter);
+  }
+
+  /**
+   * Folders get other ids while a search is on: VS Code then shows them expanded (so every match is
+   * visible) instead of reusing the collapsed state the user left them in, which comes back afterwards.
+   */
+  private get idSuffix(): string {
+    return this.filtered ? '|search' : '';
   }
 
   // ---- data
 
-  private matches = (h: Host): boolean => {
-    if (!this.filter) {
-      return true;
-    }
-    const hay = [h.alias, option(h, 'HostName'), option(h, 'User'), h.attrs.tags, h.attrs.note, containerPath(h.container), providerOf(h)?.label]
-      .join(' ')
-      .toLowerCase();
-    return this.filter.split(/\s+/).every(word => hay.includes(word));
-  };
+  private matches = (h: Host): boolean => hostMatches(h, this.filter);
 
   private hostNodes(hosts: Host[], fav = false): Node[] {
     let list = hosts.filter(this.matches);
@@ -101,7 +110,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
   }
 
   private visible(c: Container): boolean {
-    if (!this.filter) {
+    if (!this.filtered) {
       return true;
     }
     return c.hosts.some(this.matches) || c.sections.some(s => s.hosts.some(this.matches));
@@ -140,7 +149,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
 
   getTreeItem(node: Node): vscode.TreeItem {
     const settings = this.store.doc.settings;
-    const expanded = this.filter ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
+    const expanded = this.filtered ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.Collapsed;
 
     if (node.type === 'favorites') {
       const item = new vscode.TreeItem('Favorites', vscode.TreeItemCollapsibleState.Expanded);
@@ -152,7 +161,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
 
     if (node.type === 'include') {
       const item = new vscode.TreeItem(path.basename(path.dirname(node.doc.file)) + '/' + path.basename(node.doc.file), expanded);
-      item.id = 'inc|' + node.doc.file;
+      item.id = 'inc|' + node.doc.file + this.idSuffix;
       item.description = `included · ${node.doc.hosts.length}`;
       item.tooltip = `${node.doc.file}\nPulled in by an Include line. Read-only here.`;
       item.iconPath = new vscode.ThemeIcon('references');
@@ -164,7 +173,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
       const c = node.c;
       const count = c.kind === 'group' ? c.total : c.hosts.length;
       const item = new vscode.TreeItem(c.title, expanded);
-      item.id = `c|${c.id}|${c.title}`;
+      item.id = `c|${c.id}|${c.title}${this.idSuffix}`;
       const offGroup = isDisabled(c);
       item.description = offGroup ? `${count} · disabled` : String(count);
       const groupIcon = c.attrs.icon || (c.kind === 'group' ? 'folder-library' : 'folder');

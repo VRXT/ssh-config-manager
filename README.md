@@ -31,7 +31,8 @@ exactly as before.
 - **Hover a host** for its note, group, tags, provider and jump host
 - **Icons and colors** for hosts and groups
 - **Provider detection**: LAN, Tailscale, AWS, Hetzner, DigitalOcean, Azure, Google Cloud, OVH, …
-- **Filter box** that matches names, addresses, users, tags, notes and providers
+- **Search panel** that filters as you type, plus one-click filters by tag, provider and group
+- **Set Up SSH Key…**: make a key (or pick one) and install it on the server in one step
 - **Drag & drop** hosts between groups, or reorder with `Alt+↑` / `Alt+↓`
 - **Enable / disable** hosts or whole groups without deleting them
 - Hosts from `Include`d files are listed read-only
@@ -45,6 +46,35 @@ HostName, User, Port, several IdentityFiles, ProxyJump, IdentitiesOnly, ForwardA
 options. Only that host's lines are rewritten; every other line of the file is kept byte for byte.
 
 ![Host editor form](images/edit-host.png)
+
+### Search and filter
+
+<img src="images/search.png" width="420" align="right" alt="Search panel with the Home Lab group and #backup tag selected">
+
+The **Search** panel sits above the host list:
+
+- Type to filter instantly. Every word must match somewhere: name, HostName, User, Port,
+  IdentityFile, ProxyJump or any other option, tags, note, group or provider.
+- Click tags, providers and groups to narrow the list. Several picks in one row mean *any of them*;
+  picks in different rows must *all* match.
+- Folders open automatically while a search is on, and go back to how you left them when you clear it.
+
+<br clear="right">
+
+### Set up an SSH key in one step
+
+Right-click a host → **Set Up SSH Key…**
+
+![Set Up SSH Key picker: generate a new key or use an existing one](images/ssh-key.png)
+
+1. **Generate a new key** (ed25519, saved in `~/.ssh`, optional passphrase) or **pick an existing one**.
+2. The key is added to the host as `IdentityFile`.
+3. A terminal opens and copies the public key to the server's `~/.ssh/authorized_keys`. Type the
+   server password there once; after that the host logs in with the key.
+
+It goes through `ssh <host>`, so `User`, `Port`, `ProxyJump` and the rest of the config apply. It works
+on macOS, Linux and Windows, needs nothing installed on the server beyond a normal shell, and always
+runs on your computer — also from a window that is connected to a remote.
 
 ### Connect your way
 

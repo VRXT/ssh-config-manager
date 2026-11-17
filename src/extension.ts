@@ -1,10 +1,17 @@
+import * as cp from 'child_process';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import * as vscode from 'vscode';
+import { PublicKey, addIdentityFile, installKeyCommand, keyFileName, keygenArgs, listPublicKeys } from './keys';
 import {
   Container, Host, addGroup, addSection, allContainers, connectName, containerPath, deleteContainer, deleteHost,
-  PROVIDERS, findContainer, findHost, hostTags, hostToForm, isDisabled, moveGroup, moveHost, moveSection, option, parse, renameContainer, setContainerAttrs, setContainerEnabled, setHostAttrs, setHostEnabled, setSettings, setSpacers,
+  PROVIDERS, findContainer, findHost, hostTags, hostToForm, optionAll, isDisabled, moveGroup, moveHost, moveSection, option, parse, renameContainer, setContainerAttrs, setContainerEnabled, setHostAttrs, setHostEnabled, setSettings, setSpacers,
 } from './sshConfig';
 import { openHostEditor } from './hostEditor';
-import { Store } from './store';
+import { describeFilter, emptyFilter } from './search';
+import { SearchViewProvider } from './searchView';
+import { Store, collapseHome, expandHome } from './store';
 import { COLORS, HostTree, ICONS, Node, autoIcon, hostDetail, hostSummary, isFav } from './tree';
 
 const SETTINGS: { key: string; label: string; detail: string; values: { value: string; label: string }[] }[] = [
@@ -47,6 +54,16 @@ const SETTINGS: { key: string; label: string; detail: string; values: { value: s
 ];
 
 export function activate(context: vscode.ExtensionContext): void {
+  // Created first, with a fixed id, so nothing later in activation can keep it from showing
+  // and VS Code remembers whether the user hid it (status bar context menu).
+  const status = vscode.window.createStatusBarItem('sshManager.status', vscode.StatusBarAlignment.Left, 10000);
+  status.name = 'SSH Config Manager';
+  status.text = '$(plug) SSH';
+  status.tooltip = 'SSH Config Manager: connect to a host';
+  status.command = 'sshManager.quickConnect';
+  status.show();
+  context.subscriptions.push(status);
+
   const store = new Store(vscode.Uri.joinPath(context.globalStorageUri, 'backups').fsPath);
   const tree = new HostTree(store);
   const view = vscode.window.createTreeView('sshManager.hosts', {
@@ -56,16 +73,20 @@ export function activate(context: vscode.ExtensionContext): void {
     showCollapseAll: true,
   });
 
+  const search = new SearchViewProvider(store, tree);
+
   const refreshChrome = () => {
-    view.description = tree.filterText ? `filter: ${tree.filterText}` : undefined;
+    view.description = tree.filtered ? `filter: ${describeFilter(tree.currentFilter)}` : undefined;
     view.message = store.error ? `Cannot read ${store.configPath}: ${store.error}` : undefined;
   };
   store.onDidChange(refreshChrome);
+  tree.onDidChangeFilter(refreshChrome);
   refreshChrome();
 
   context.subscriptions.push(
     store,
     view,
+    vscode.window.registerWebviewViewProvider(SearchViewProvider.id, search),
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('sshManager.configFile')) {
         store.reload();
@@ -190,14 +211,8 @@ export function activate(context: vscode.ExtensionContext): void {
     return `ssh ${store.isDefaultPath ? '' : `-F ${q(store.configPath)} `}${q(name)}`;
   };
 
-  const connectTerminal = async (h: Host) => {
-    const cmd = sshCommand(h);
-    if (!cmd) {
-      vscode.window.showInformationMessage(
-        h.disabled ? `"${h.alias}" is disabled. Enable it first.` : `"${h.alias}" is a pattern, not a host you can connect to.`,
-      );
-      return;
-    }
+  /** Runs a command in a terminal on THIS computer, where the config and keys are. */
+  const runLocal = async (name: string, cmd: string) => {
     if (vscode.env.remoteName) {
       // In a window that is itself connected to a remote, a normal terminal would open ON that
       // remote. The config and keys live on this computer, so ask for a local terminal instead.
@@ -208,9 +223,20 @@ export function activate(context: vscode.ExtensionContext): void {
       local?.sendText(cmd);
       return;
     }
-    const term = vscode.window.createTerminal({ name: h.alias, iconPath: new vscode.ThemeIcon('remote') });
+    const term = vscode.window.createTerminal({ name, iconPath: new vscode.ThemeIcon('remote') });
     term.show();
     term.sendText(cmd);
+  };
+
+  const connectTerminal = async (h: Host) => {
+    const cmd = sshCommand(h);
+    if (!cmd) {
+      vscode.window.showInformationMessage(
+        h.disabled ? `"${h.alias}" is disabled. Enable it first.` : `"${h.alias}" is a pattern, not a host you can connect to.`,
+      );
+      return;
+    }
+    await runLocal(h.alias, cmd);
   };
 
   const connectRemote = async (h: Host, reuseWindow: boolean) => {
@@ -238,21 +264,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   reg('sshManager.refresh', () => store.reload());
 
-  reg('sshManager.filter', async () => {
-    const text = await vscode.window.showInputBox({
-      prompt: 'Filter by name, address, user, tag, note or group',
-      value: tree.filterText,
-      placeHolder: 'e.g. nova db',
-    });
-    if (text !== undefined) {
-      tree.setFilter(text);
-      refreshChrome();
-    }
-  });
+  reg('sshManager.filter', () => search.focus());
 
   reg('sshManager.clearFilter', () => {
-    tree.setFilter('');
-    refreshChrome();
+    tree.setFilter(emptyFilter());
   });
 
   reg('sshManager.openConfig', async () => {
@@ -509,14 +524,6 @@ export function activate(context: vscode.ExtensionContext): void {
     });
   });
 
-  // one click from anywhere: the grouped picker, as a stand-in for Remote-SSH's flat host list
-  const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 10000);
-  status.text = '$(plug) SSH';
-  status.tooltip = 'SSH Config Manager: connect to a host';
-  status.command = 'sshManager.quickConnect';
-  status.show();
-  context.subscriptions.push(status);
-
   reg('sshManager.setIcon', node => setLook(node, 'icon'));
   reg('sshManager.setColor', node => setLook(node, 'color'));
 
@@ -608,6 +615,129 @@ export function activate(context: vscode.ExtensionContext): void {
     if (h) {
       await connectRemote(h, false);
     }
+  });
+
+  // ---- SSH keys: make a new key or pick one, put it on the server, and use it for the host
+
+  reg('sshManager.setupKey', async node => {
+    const h = await pickHost(node);
+    const alias = h && connectName(h);
+    if (!h || !alias) {
+      if (h) {
+        vscode.window.showInformationMessage(
+          h.disabled ? `"${h.alias}" is disabled. Enable it first.` : `"${h.alias}" is a pattern, not a host you can connect to.`,
+        );
+      }
+      return;
+    }
+    const sshDir = path.join(os.homedir(), '.ssh');
+    const inUse = new Set(optionAll(h, 'IdentityFile').map(p => path.resolve(expandHome(p))));
+    type KeyItem = vscode.QuickPickItem & { key?: PublicKey; generate?: boolean };
+    const items: KeyItem[] = [
+      {
+        label: '$(add) Generate a new key',
+        detail: `A new ed25519 key in ~/.ssh, copied to ${alias} and added to this host`,
+        generate: true,
+      },
+    ];
+    const keys = listPublicKeys(sshDir);
+    if (keys.length) {
+      items.push({ label: 'Use an existing key', kind: vscode.QuickPickItemKind.Separator });
+      for (const key of keys) {
+        items.push({
+          label: `$(key) ${path.basename(key.priv)}`,
+          description: [key.type.replace(/^ssh-/, ''), key.comment, inUse.has(key.priv) ? '· used by this host' : ''].filter(Boolean).join('  '),
+          key,
+        });
+      }
+    }
+    const picked = await vscode.window.showQuickPick(items, {
+      title: `Set Up SSH Key for ${alias}`,
+      placeHolder: 'Generate a new key, or pick one you already have',
+    });
+    if (!picked) {
+      return;
+    }
+
+    let key = picked.key;
+    if (picked.generate) {
+      const name = await vscode.window.showInputBox({
+        title: `New SSH key for ${alias} (1/2)`,
+        prompt: 'File name in ~/.ssh',
+        value: keyFileName(alias),
+        validateInput: v => {
+          if (!/^[A-Za-z0-9._-]+$/.test(v) || v.startsWith('.')) {
+            return 'Use letters, digits, dot, dash or underscore';
+          }
+          return fs.existsSync(path.join(sshDir, v)) || fs.existsSync(path.join(sshDir, v + '.pub'))
+            ? 'A key with this name already exists — pick it from the list instead, or choose another name'
+            : undefined;
+        },
+      });
+      if (!name) {
+        return;
+      }
+      const passphrase = await vscode.window.showInputBox({
+        title: `New SSH key for ${alias} (2/2)`,
+        prompt: 'Passphrase to protect the key (optional). Press Enter to leave it empty.',
+        password: true,
+        placeHolder: 'Leave empty for no passphrase',
+      });
+      if (passphrase === undefined) {
+        return;
+      }
+      if (passphrase) {
+        const again = await vscode.window.showInputBox({ title: `New SSH key for ${alias}`, prompt: 'Type the passphrase again', password: true });
+        if (again !== passphrase) {
+          vscode.window.showErrorMessage(again === undefined ? 'Cancelled.' : 'The passphrases do not match. Nothing was created.');
+          return;
+        }
+      }
+      const file = path.join(sshDir, name);
+      try {
+        fs.mkdirSync(sshDir, { recursive: true, mode: 0o700 });
+        await new Promise<void>((resolve, reject) =>
+          cp.execFile('ssh-keygen', keygenArgs(file, passphrase, `${alias} (SSH Config Manager)`), err => (err ? reject(err) : resolve())),
+        );
+      } catch (e: any) {
+        vscode.window.showErrorMessage(
+          e?.code === 'ENOENT'
+            ? 'ssh-keygen was not found. Install the OpenSSH client and try again.'
+            : `Could not create the key: ${e?.message ?? e}`,
+        );
+        return;
+      }
+      key = listPublicKeys(sshDir).find(k => k.priv === file);
+      if (!key) {
+        vscode.window.showErrorMessage(`The key was not found at ${file} after ssh-keygen ran.`);
+        return;
+      }
+    }
+    if (!key) {
+      return;
+    }
+
+    // use the key for this host from now on (hosts from Include files are read-only)
+    if (!h.readonly && !inUse.has(key.priv)) {
+      const hostId = h.id;
+      const keyPath = collapseHome(key.priv);
+      if (!(await store.mutate(doc => addIdentityFile(doc, hostId, keyPath)))) {
+        return;
+      }
+    }
+
+    await runLocal(
+      `${alias}: install key`,
+      installKeyCommand({
+        platform: process.platform,
+        alias,
+        pub: key.pub,
+        configFile: store.isDefaultPath ? undefined : store.configPath,
+      }),
+    );
+    vscode.window.showInformationMessage(
+      `Type the password for ${alias} in the terminal to copy ${path.basename(key.pub)} to the server. After that, ${alias} logs in with the key.`,
+    );
   });
 
   reg('sshManager.copySsh', async node => {
