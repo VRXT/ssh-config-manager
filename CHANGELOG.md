@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: a new sub-folder did not show until it had hosts, so it looked like it was not created and got
+  added twice. Sub-folders made with Add Sub-group now always show, and duplicate names are refused
 - **Remote folder** per host (`folder=` on the `#@host` line, set in the form or with *Set Remote Folder…*):
   Open in Window goes straight into that folder on the server, and Connect in Terminal starts there
 

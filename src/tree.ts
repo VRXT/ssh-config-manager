@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { Container, Doc, Host, connectName, containerPath, findContainer, hostTags, isDisabled, moveGroup, moveHost, moveSection, option, parse, providerOf } from './sshConfig';
+import { Container, Doc, Host, connectName, containerPath, findContainer, hostTags, isDisabled, moveGroup, skipsSectionLevel, moveHost, moveSection, option, parse, providerOf } from './sshConfig';
 import { HostFilter, emptyFilter, hostMatches, isFilterEmpty } from './search';
 import { Store } from './store';
 
@@ -144,8 +144,8 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
       case 'include':
         return this.hostNodes(node.doc.hosts);
       case 'container':
-        // a group whose hosts all sit under one sub-header: skip the extra level
-        if (node.c.kind === 'group' && !node.c.hosts.length && node.c.sections.length === 1) {
+        // a group whose hosts all sit under one hand-written sub-header: skip the extra level
+        if (skipsSectionLevel(node.c)) {
           return this.hostNodes(node.c.sections[0].hosts);
         }
         return [

@@ -145,6 +145,23 @@ test('remote folder: terminal starts there, unless the host has a RemoteCommand'
   assert.strictEqual(r.sshInFolder("ssh -F '/my cfg' nas", '/srv/my app', false), `ssh -t -F '/my cfg' nas 'cd "/srv/my app" && exec $SHELL -l'`);
 });
 
+test('new project, then new sub-folder: the sub-folder shows (not hidden, so it is not added twice)', () => {
+  let t = c.addGroup(P(SAMPLE), 'New Project');
+  const g = c.allContainers(P(t)).find(x => x.title === 'New Project');
+  t = c.addSection(P(t), g.id, 'Sub One');
+  const g2 = c.allContainers(P(t)).find(x => x.title === 'New Project');
+  assert.deepStrictEqual(g2.sections.map(x => x.title), ['Sub One'], 'exactly one sub-folder');
+  assert.strictEqual(c.skipsSectionLevel(g2), false, 'an empty #@section is shown');
+  // still shown once it has hosts: it was made on purpose
+  const form = { ...c.emptyForm(g2.sections[0].id), alias: 'web', hostName: '203.0.113.5' };
+  const g3 = c.allContainers(P(c.addHost(P(t), form))).find(x => x.title === 'New Project');
+  assert.deepStrictEqual(g3.sections[0].hosts.map(h => h.alias), ['web']);
+  assert.strictEqual(c.skipsSectionLevel(g3), false, 'a #@section with hosts is shown');
+  // a hand-written "# --- NAME ---" header holding the whole group is still flattened
+  const hand = P('Host -----APEX-----\n    HostName 0.0.0.0\n# --- HETZNER ---\nHost a\n    HostName 203.0.113.9\n');
+  assert.strictEqual(c.skipsSectionLevel(hand.groups[0]), true);
+});
+
 // The rest needs ssh-keygen and a POSIX shell; skipped where they are missing.
 const has = cmd => cp.spawnSync(process.platform === 'win32' ? 'where' : 'which', [cmd]).status === 0;
 if (process.platform !== 'win32' && has('ssh-keygen')) {

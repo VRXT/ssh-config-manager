@@ -412,6 +412,20 @@ export function findHost(doc: Doc, id: string): Host | undefined {
   return doc.hosts.find(h => h.id === id);
 }
 
+/**
+ * Whether the tree and the pickers show a group's hosts directly instead of its only sub-folder.
+ * Only for a hand-written `# --- NAME ---` header that holds every host of its group (one level
+ * less to click through). A sub-folder made with `#@section` (Add Sub-group) always shows, even
+ * while it is empty, so it never seems to vanish right after it is created.
+ */
+export function skipsSectionLevel(g: Container): boolean {
+  if (g.kind !== 'group' || g.hosts.length || g.sections.length !== 1) {
+    return false;
+  }
+  const s = g.sections[0];
+  return s.hosts.length > 0 && !s.markers.some(m => m.kind === 'explicit');
+}
+
 export function containerPath(c: Container | undefined): string {
   return !c ? '' : c.parent ? `${c.parent.title} / ${c.title}` : c.title;
 }

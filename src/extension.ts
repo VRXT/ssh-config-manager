@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { PublicKey, addIdentityFile, installKeyCommand, keyFileName, keygenArgs, listPublicKeys } from './keys';
 import {
   Container, Host, addGroup, addSection, allContainers, connectName, containerPath, deleteContainer, deleteHost,
-  PROVIDERS, findContainer, findHost, hostTags, hostToForm, optionAll, isDisabled, moveGroup, moveHost, moveSection, option, parse, renameContainer, setContainerAttrs, setContainerEnabled, setHostAttrs, setHostEnabled, setSettings, setSpacers,
+  PROVIDERS, findContainer, findHost, hostTags, hostToForm, optionAll, isDisabled, moveGroup, moveHost, moveSection, option, parse, renameContainer, setContainerAttrs, setContainerEnabled, setHostAttrs, setHostEnabled, setSettings, setSpacers, skipsSectionLevel,
 } from './sshConfig';
 import { openHostEditor } from './hostEditor';
 import { describeFilter, emptyFilter } from './search';
@@ -175,7 +175,7 @@ export function activate(context: vscode.ExtensionContext): void {
       out.push(...loose.map(h => row(h, 0)));
     }
     for (const g of doc.groups) {
-      const only = g.sections.length === 1 && !g.hosts.length; // one sub-folder holding everything: skip that level
+      const only = skipsSectionLevel(g); // one hand-written sub-folder holding everything: skip that level
       block(
         g.title,
         safe(g.attrs.icon || 'folder-library', 'folder-library'),
@@ -812,19 +812,30 @@ export function activate(context: vscode.ExtensionContext): void {
 
   reg('sshManager.addGroup', async () => {
     const name = await askName('New group name');
-    if (name) {
-      await store.mutate(d => addGroup(d, name));
+    if (!name) {
+      return;
     }
+    if (store.doc.groups.some(g => g.title.trim().toLowerCase() === name.trim().toLowerCase())) {
+      vscode.window.showWarningMessage(`A group named "${name.trim()}" already exists.`);
+      return;
+    }
+    await store.mutate(d => addGroup(d, name));
   });
 
   reg('sshManager.addSection', async node => {
     if (node?.type !== 'container') {
       return;
     }
-    const name = await askName(`New sub-group in "${node.c.title}"`);
-    if (name) {
-      await store.mutate(d => addSection(d, (node.c.parent ?? node.c).id, name));
+    const group = node.c.parent ?? node.c;
+    const name = await askName(`New sub-group in "${group.title}"`);
+    if (!name) {
+      return;
     }
+    if (group.sections.some(s => s.title.trim().toLowerCase() === name.trim().toLowerCase())) {
+      vscode.window.showWarningMessage(`"${group.title}" already has a sub-group named "${name.trim()}".`);
+      return;
+    }
+    await store.mutate(d => addSection(d, group.id, name));
   });
 
   reg('sshManager.renameGroup', async node => {
