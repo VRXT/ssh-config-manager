@@ -1,0 +1,137 @@
+/* Shared look of the settings page and the setup wizard; colors come from the user's VS Code theme. */
+:root { --radius: 8px; --line: var(--vscode-widget-border, rgba(128,128,128,.28)); --muted: var(--vscode-descriptionForeground);
+  --accent: var(--vscode-button-background); --accent-fg: var(--vscode-button-foreground);
+  --card: var(--vscode-editorWidget-background, rgba(128,128,128,.06)); --hover: var(--vscode-list-hoverBackground);
+  --ok: var(--vscode-charts-green, #3fb950); --warn: var(--vscode-charts-yellow, #d29922); --bad: var(--vscode-charts-red, #f85149); }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; padding: 0; font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); color: var(--vscode-foreground); line-height: 1.5; }
+h1 { font-size: 1.7em; font-weight: 600; margin: 0 0 4px; letter-spacing: -.01em; }
+h2 { font-size: 1.15em; font-weight: 600; margin: 0 0 2px; }
+p { margin: 0 0 10px; }
+.muted { color: var(--muted); }
+.small { font-size: .9em; }
+code, .mono { font-family: var(--vscode-editor-font-family); font-size: .92em; }
+code { background: var(--vscode-textCodeBlock-background, rgba(128,128,128,.15)); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--vscode-textLink-foreground); cursor: pointer; text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { font: inherit; cursor: pointer; }
+.btn { border: 1px solid transparent; border-radius: 6px; padding: 5px 14px; background: var(--accent); color: var(--accent-fg); white-space: nowrap; }
+.btn:hover { background: var(--vscode-button-hoverBackground); }
+.btn.ghost { background: transparent; color: var(--vscode-foreground); border-color: var(--line); }
+.btn.ghost:hover { background: var(--hover); }
+.btn.danger { background: transparent; color: var(--bad); border-color: var(--line); }
+.btn.danger:hover { background: var(--hover); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn:focus-visible, .opt:focus-visible, .switch:focus-visible, .nav button:focus-visible, .seg button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+.row { display: flex; align-items: center; gap: 10px; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.wrap { flex-wrap: wrap; }
+
+/* illustration card */
+/* the whole illustration, on a card of its own background color */
+.art { width: 100%; height: 230px; object-fit: contain; border-radius: 12px; display: block; background: #081a40; }
+
+/* a setting: title + description on the left, control on the right */
+.card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); margin: 0 0 12px; overflow: hidden; }
+.item { display: flex; align-items: center; gap: 16px; padding: 14px 16px; }
+.item + .item { border-top: 1px solid var(--line); }
+.item.top { align-items: flex-start; }
+.item .t { font-weight: 600; }
+.item .d { color: var(--muted); font-size: .92em; }
+.stack { display: block; padding: 14px 16px; }
+.stack + .stack, .item + .stack, .stack + .item { border-top: 1px solid var(--line); }
+
+/* on/off switch */
+.switch { flex: 0 0 auto; width: 38px; height: 22px; border-radius: 11px; border: 1px solid var(--line); background: var(--vscode-input-background); position: relative; padding: 0; transition: background .12s; }
+.switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform .12s, background .12s; }
+.switch[aria-checked="true"] { background: var(--accent); border-color: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); background: var(--accent-fg); }
+
+/* segmented control */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; flex: 0 0 auto; }
+.seg button { border: 0; background: transparent; color: var(--vscode-foreground); padding: 4px 12px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button:hover { background: var(--hover); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+
+/* option cards (pick one) */
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.opt { text-align: left; border: 1px solid var(--line); border-radius: var(--radius); background: transparent; color: var(--vscode-foreground); padding: 12px 14px; position: relative; }
+.opt:hover { background: var(--hover); }
+.opt[aria-pressed="true"] { border-color: var(--vscode-focusBorder); box-shadow: 0 0 0 1px var(--vscode-focusBorder) inset; }
+.opt .t { font-weight: 600; display: block; padding-right: 22px; }
+.opt .d { color: var(--muted); font-size: .9em; display: block; margin-top: 2px; }
+.opt .tick { position: absolute; top: 11px; right: 12px; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--line); }
+.opt[aria-pressed="true"] .tick { background: var(--accent); border-color: var(--accent); }
+.opt[aria-pressed="true"] .tick::after { content: ''; position: absolute; left: 5px; top: 2px; width: 4px; height: 8px; border: solid var(--accent-fg); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.badge { display: inline-block; font-size: .78em; font-weight: 600; padding: 0 7px; border-radius: 9px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); vertical-align: 1px; margin-left: 6px; }
+
+/* status line with a dot */
+.status { display: flex; align-items: baseline; gap: 8px; }
+.dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transform: translateY(-1px); }
+.dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+
+/* note boxes */
+.note { border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: 6px; padding: 10px 14px; margin: 0 0 12px; background: var(--card); }
+.note.info { border-left-color: var(--vscode-focusBorder); }
+.note b { display: block; margin-bottom: 2px; }
+
+/* key caps */
+kbd { display: inline-block; min-width: 22px; text-align: center; font-family: var(--vscode-font-family); font-size: .88em; padding: 1px 6px; border-radius: 5px;
+  border: 1px solid var(--line); border-bottom-width: 2px; background: var(--vscode-input-background); margin-left: 3px; }
+.keys { display: grid; grid-template-columns: 1fr auto; gap: 0; }
+.keys > div { padding: 7px 16px; border-top: 1px solid var(--line); }
+.keys > div:nth-child(-n+2) { border-top: 0; }
+.keys .k { text-align: right; white-space: nowrap; }
+.where { font-size: .78em; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin: 16px 0 6px; }
+
+/* preview of the Remote-SSH host list */
+.picker { border: 1px solid var(--line); border-radius: var(--radius); background: var(--vscode-quickInput-background, var(--vscode-editor-background)); padding: 6px; font-size: .92em; max-width: 340px; }
+.picker .in { border: 1px solid var(--vscode-focusBorder); border-radius: 4px; padding: 3px 8px; color: var(--muted); margin-bottom: 4px; }
+.picker .r { padding: 2px 8px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.6em; }
+.picker .r.h { color: var(--muted); }
+.picker .r.sel { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
+
+input[type=text], input[type=number] { font: inherit; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, var(--line)); border-radius: 5px; padding: 4px 8px; }
+input:focus { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+
+/* small helpers (inline style attributes are not allowed by the content policy) */
+.gap-t { margin-top: 12px; } .tight { margin-top: 6px; } .indent { margin-left: 16px; } .inl { display: inline !important; } .num { width: 76px; }
+.note b.inl { margin: 0; }
+
+/* page layout: sections on the left, content on the right */
+.layout { display: grid; grid-template-columns: 216px minmax(0, 1fr); min-height: 100vh; }
+.nav { border-right: 1px solid var(--line); padding: 22px 12px; position: sticky; top: 0; height: 100vh; overflow: auto; }
+.nav .brand { font-weight: 600; padding: 0 10px 2px; }
+.nav .sub { color: var(--muted); font-size: .9em; padding: 0 10px 14px; }
+.nav button { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; color: inherit; padding: 7px 10px; border-radius: 6px; margin-bottom: 2px; }
+.nav button:hover { background: var(--hover); }
+.nav button[aria-current="true"] { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
+.nav .flag { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+.main { padding: 26px 36px 28px; max-width: 880px; }
+.main .art { margin-bottom: 22px; }
+.lead { color: var(--muted); margin: 0 0 20px; max-width: 64ch; font-size: 1.05em; }
+
+/* wizard: numbered steps on the left */
+.nav .n { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: inline-grid; place-items: center; font-size: .85em; }
+.nav button.done .n { background: var(--ok); border-color: var(--ok); color: #fff; }
+.nav button[aria-current="true"] .n { border-color: currentColor; }
+/* Back / Continue stay in view however long the step is */
+.foot { display: flex; gap: 10px; align-items: center; margin-top: 24px; padding: 14px 0; border-top: 1px solid var(--line);
+  position: sticky; bottom: 0; background: var(--vscode-editor-background); z-index: 2; }
+.foot .count { color: var(--muted); margin-right: auto; }
+.progress { height: 3px; background: var(--line); border-radius: 2px; margin: 0 0 22px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.big { display: flex; align-items: center; gap: 14px; padding: 16px; }
+.big .num { width: auto; font-size: 1.6em; font-weight: 600; line-height: 1; }
+
+@media (max-width: 720px) {
+  .layout { grid-template-columns: 1fr; }
+  .nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); display: flex; gap: 4px; overflow-x: auto; padding: 10px 12px; }
+  .nav .brand, .nav .sub { display: none; }
+  .nav button { width: auto; white-space: nowrap; margin: 0; }
+  .main { padding: 18px 16px 48px; }
+}
+.opts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 720px) { .opts.two { grid-template-columns: 1fr; } }

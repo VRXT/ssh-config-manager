@@ -85,3 +85,40 @@ export function addIdentityFile(doc: Doc, hostId: string, keyPath: string): stri
   }
   return updateHost(doc, hostId, form);
 }
+
+export interface MissingKey {
+  hostId: string;
+  alias: string;
+  /** the IdentityFile value as written in the config */
+  key: string;
+  /** where that is on this computer */
+  file: string;
+}
+
+/**
+ * Hosts whose SSH key is not on this computer: every IdentityFile they list is missing (ssh tries
+ * each one that exists, so a host with at least one present is fine). Keys are never part of the
+ * config or of any sync, so after moving to another computer this is what still has to be copied
+ * over by hand. Paths with ssh tokens such as %h cannot be checked and count as present.
+ */
+export function missingKeys(doc: Doc, home: string): MissingKey[] {
+  const out: MissingKey[] = [];
+  for (const h of doc.hosts) {
+    if (h.disabled) {
+      continue;
+    }
+    const keys = h.options.filter(o => o.key.toLowerCase() === 'identityfile' && o.value && o.value.toLowerCase() !== 'none');
+    if (!keys.length) {
+      continue;
+    }
+    const resolved = keys.map(o => ({
+      key: o.value,
+      file: path.resolve(home, '.ssh', o.value === '~' || o.value.startsWith('~/') ? path.join(home, o.value.slice(1)) : o.value),
+    }));
+    if (resolved.some(k => k.key.includes('%') || fs.existsSync(k.file))) {
+      continue;
+    }
+    out.push(...resolved.map(k => ({ hostId: h.id, alias: h.alias, key: k.key, file: k.file })));
+  }
+  return out;
+}

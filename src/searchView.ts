@@ -111,7 +111,7 @@ function html(webview: vscode.Webview): string {
   <div class="meta"><span id="count"></span><a id="clear" role="button" tabindex="0">Clear filters</a></div>
   <section id="sec-tags"><h3>Tags</h3><div class="chips" id="tags"></div></section>
   <section id="sec-providers"><h3>Providers</h3><div class="chips" id="providers"></div></section>
-  <section id="sec-groups"><h3>Groups</h3><div class="chips" id="groups"></div></section>
+  <section id="sec-groups"><h3>Folders</h3><div class="chips" id="groups"></div></section>
 <script nonce="${nonce}">
   const vscode = acquireVsCodeApi();
   const $ = id => document.getElementById(id);

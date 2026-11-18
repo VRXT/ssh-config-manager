@@ -3,56 +3,20 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { PublicKey, addIdentityFile, installKeyCommand, keyFileName, keygenArgs, listPublicKeys } from './keys';
+import { PublicKey, addIdentityFile, installKeyCommand, keyFileName, keygenArgs, listPublicKeys, missingKeys } from './keys';
 import {
   Container, Host, addGroup, addSection, allContainers, connectName, containerPath, deleteContainer, deleteHost,
-  PROVIDERS, findContainer, findHost, hostTags, hostToForm, optionAll, isDisabled, moveGroup, moveHost, moveSection, option, parse, renameContainer, setContainerAttrs, setContainerEnabled, setHostAttrs, setHostEnabled, setSettings, setSpacers, skipsSectionLevel,
+  PROVIDERS, findContainer, findHost, hostTags, hostToForm, optionAll, isDisabled, moveGroup, moveHost, moveSection, option, parse, renameContainer, setContainerAttrs, setContainerEnabled, setHostAttrs, setHostEnabled, setPickerFormatting, skipsSectionLevel,
 } from './sshConfig';
+import { ago } from './backups';
 import { openHostEditor } from './hostEditor';
+import { Panels } from './panels';
 import { describeFilter, emptyFilter } from './search';
 import { folderProblem, sshInFolder } from './remote';
 import { SearchViewProvider } from './searchView';
 import { Store, collapseHome, expandHome } from './store';
+import { SyncController } from './syncController';
 import { COLORS, COLOR_DOTS, HostTree, ICONS, Node, autoIcon, hostDetail, hostSummary, isFav } from './tree';
-
-const SETTINGS: { key: string; label: string; detail: string; values: { value: string; label: string }[] }[] = [
-  {
-    key: 'sort', label: 'Sort hosts', detail: 'Order of hosts inside each group',
-    values: [{ value: 'file', label: 'As written in the file' }, { value: 'name', label: 'By name' }],
-  },
-  {
-    key: 'click', label: 'Click action', detail: 'What a single click on a host does',
-    values: [
-      { value: 'none', label: 'Nothing (just select)' },
-      { value: 'terminal', label: 'Connect in terminal' },
-      { value: 'window', label: 'Open in this window (Remote-SSH)' },
-      { value: 'newWindow', label: 'Open in new window (Remote-SSH)' },
-      { value: 'edit', label: 'Open the edit form' },
-    ],
-  },
-  {
-    key: 'favorites', label: 'Favorites section', detail: 'Show starred hosts pinned at the top',
-    values: [{ value: 'on', label: 'Show' }, { value: 'off', label: 'Hide' }],
-  },
-  {
-    key: 'autoicon', label: 'Automatic icons', detail: 'Guess an icon from the address (LAN, Tailscale, public) when none is set',
-    values: [{ value: 'on', label: 'On' }, { value: 'off', label: 'Off' }],
-  },
-  {
-    key: 'remote-subfolders', label: 'Sub-folder rows in the Remote-SSH picker',
-    detail: 'How sub-folders are shown there (needs "Remote-SSH Picker Spacing" to be added)',
-    values: [
-      { value: 'dashes', label: '--- NAME ---' },
-      { value: 'arrow', label: '▾ NAME' },
-      { value: 'off', label: 'No sub-folder rows' },
-    ],
-  },
-  {
-    key: 'remote-favorites', label: 'Favorites in the Remote-SSH picker',
-    detail: 'Copies starred hosts into a generated "-----FAVORITES-----" block at the top of the config file, as ★name',
-    values: [{ value: 'off', label: 'Off' }, { value: 'on', label: 'On' }],
-  },
-];
 
 export function activate(context: vscode.ExtensionContext): void {
   // Created first, with a fixed id, so nothing later in activation can keep it from showing
@@ -75,6 +39,18 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   const search = new SearchViewProvider(store, tree);
+  const sync = new SyncController(store, context.globalState);
+  const panels = new Panels(context, store, sync);
+  context.subscriptions.push(sync, panels);
+
+  // what is selected, for the keyboard shortcuts that only make sense on a host or on a folder
+  const selectionKind = () => {
+    const n = view.selection[0];
+    return !n ? '' : n.type === 'container' ? 'folder' : n.type === 'host' ? (n.host.isPattern ? 'pattern' : 'host') : 'other';
+  };
+  const setSelection = () => vscode.commands.executeCommand('setContext', 'sshManager.selection', selectionKind());
+  context.subscriptions.push(view.onDidChangeSelection(setSelection));
+  setSelection();
 
   const refreshChrome = () => {
     view.description = tree.filtered ? `filter: ${describeFilter(tree.currentFilter)}` : undefined;
@@ -194,9 +170,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const pickContainer = async (placeHolder: string, current?: Container): Promise<string | undefined> => {
     const items = [
-      { label: '$(circle-slash) (no group)', id: '' },
+      { label: '$(circle-slash) (not in a folder)', id: '' },
       ...allContainers(store.doc).map(c => ({
-        label: `${c.kind === 'group' ? '$(folder-library)' : '$(folder)'} ${containerPath(c)}`,
+        label: `$(folder) ${containerPath(c)}`,
         id: c.id,
         description: c === current ? 'current' : undefined,
       })),
@@ -219,7 +195,8 @@ export function activate(context: vscode.ExtensionContext): void {
       return undefined;
     }
     const q = (s: string) => (/^[\w.@:%+,/-]+$/.test(s) ? s : `'${s.replace(/'/g, `'\\''`)}'`);
-    return `ssh ${store.isDefaultPath ? '' : `-F ${q(store.configPath)} `}${q(name)}`;
+    const config = store.sshConfigFile;
+    return `ssh ${config ? `-F ${q(config)} ` : ''}${q(name)}`;
   };
 
   /** Runs a command in a terminal on THIS computer, where the config and keys are. */
@@ -278,8 +255,14 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // ---- commands
 
+  // Run from a menu, a command gets the row it was opened on. Run from a keyboard shortcut (or the
+  // Command Palette) it gets nothing, and acts on what is selected in the Hosts list.
   const reg = (id: string, fn: (node?: Node, selected?: Node[]) => unknown) =>
-    context.subscriptions.push(vscode.commands.registerCommand(id, fn));
+    context.subscriptions.push(
+      vscode.commands.registerCommand(id, (node?: Node, selected?: Node[]) =>
+        node === undefined && view.selection.length ? fn(view.selection[0], [...view.selection]) : fn(node, selected)),
+    );
+  const regPlain = (id: string, fn: (...args: any[]) => unknown) => context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
   reg('sshManager.refresh', () => store.reload());
 
@@ -293,46 +276,160 @@ export function activate(context: vscode.ExtensionContext): void {
     await vscode.window.showTextDocument(vscode.Uri.file(store.configPath));
   });
 
-  reg('sshManager.settings', async () => {
-    const current = store.doc.settings;
-    const setting = await vscode.window.showQuickPick(
-      SETTINGS.map(s => {
-        const value = current[s.key] ?? s.values[0].value;
-        return { label: s.label, description: s.values.find(v => v.value === value)?.label ?? value, detail: s.detail, s };
-      }),
-      { placeHolder: 'Settings are saved as a "#@ssh-manager" comment in the config file' },
+  // ---- settings page, setup wizard, guide
+
+  regPlain('sshManager.settingsPage', (section?: string) => panels.showSettings(typeof section === 'string' ? section : undefined));
+  regPlain('sshManager.settings', () => panels.showSettings());
+  regPlain('sshManager.shortcuts', () => panels.showSettings('shortcuts'));
+  regPlain('sshManager.wizard', () => panels.showWizard(true));
+  regPlain('sshManager.walkthrough', () =>
+    vscode.commands.executeCommand('workbench.action.openWalkthrough', `${context.extension.id}#sshManager.gettingStarted`, false));
+
+  // ---- Remote-SSH list formatting (headings and gaps in VS Code's own host list)
+
+  regPlain('sshManager.remoteSpacing', async () => {
+    // what the file has now (not the default that the next save would apply)
+    const on = store.doc.settings['remote-picker'] === 'on' || store.doc.spacers.length > 0;
+    const pick = await vscode.window.showQuickPick(
+      [
+        { label: '$(check) Format the Remote-SSH host list', detail: 'A heading for every folder and subfolder, a blank row between folders, favorites on top', on: true },
+        { label: '$(close) Leave it as one plain list', detail: 'Removes those rows from the config file again', on: false },
+      ],
+      { title: 'Remote-SSH host list', placeHolder: on ? 'Formatting is on now' : 'Formatting is off now' },
     );
-    if (!setting) {
-      return;
-    }
-    const value = await vscode.window.showQuickPick(
-      setting.s.values.map(v => ({ label: v.label, value: v.value })),
-      { placeHolder: setting.s.label },
-    );
-    if (value) {
-      await store.mutate(d => setSettings(d, { [setting.s.key]: value.value }));
+    if (pick && pick.on !== on) {
+      await store.mutate(d => setPickerFormatting(d, pick.on));
     }
   });
 
-  reg('sshManager.remoteSpacing', async () => {
-    const count = store.doc.spacers.length;
-    const pick = await vscode.window.showQuickPick(
-      [
-        {
-          label: '$(add) Add empty rows between projects',
-          detail: 'Writes one "Host <invisible name>" line above each "Host -----NAME-----" separator in the config file',
-          on: true,
-        },
-        { label: '$(remove) Remove the empty rows', detail: `Deletes those lines again (${count} in the file now)`, on: false },
-      ],
-      { placeHolder: 'Spacing in the Remote-SSH "Select configured SSH host" picker' },
-    );
-    if (pick && (await store.mutate(d => setSpacers(d, pick.on)))) {
-      vscode.window.showInformationMessage(
-        pick.on
-          ? `Added ${store.doc.spacers.length} empty rows. Open the Remote-SSH host picker to see them.`
-          : 'Removed the empty rows.',
+  // the one time it is switched on by default, say so and offer the way back
+  context.subscriptions.push(
+    store.onDidAutoFormat(async () => {
+      const pick = await vscode.window.showInformationMessage(
+        'Your folders now also show in VS Code’s Remote-SSH host list, as headings with a gap between folders.',
+        'Keep', 'Turn Off', 'Settings',
       );
+      if (pick === 'Turn Off') {
+        await store.mutate(d => setPickerFormatting(d, false));
+      } else if (pick === 'Settings') {
+        panels.showSettings('picker');
+      }
+    }),
+  );
+
+  // ---- backups: a folder next to the config file
+
+  regPlain('sshManager.backupNow', () => {
+    try {
+      const file = store.backupNow();
+      vscode.window.showInformationMessage(
+        !store.exists ? 'There is no config file to back up yet.' : file ? `Backup saved: ${collapseHome(file)}` : 'Nothing changed since the last backup.',
+      );
+    } catch (e: any) {
+      vscode.window.showErrorMessage(`SSH Config Manager: could not save a backup: ${e?.message ?? e}`);
+    }
+    store.reload();
+  });
+
+  regPlain('sshManager.openBackups', async () => {
+    fs.mkdirSync(store.backupDir, { recursive: true, mode: 0o700 });
+    await vscode.env.openExternal(vscode.Uri.file(store.backupDir));
+  });
+
+  regPlain('sshManager.compareBackup', async (file?: string) => {
+    const backup = store.backups().find(b => b.file === file);
+    if (backup) {
+      await vscode.commands.executeCommand('vscode.diff', vscode.Uri.file(backup.file), vscode.Uri.file(store.configPath), `Backup from ${ago(backup.date)} ↔ Now`);
+    }
+  });
+
+  regPlain('sshManager.restoreBackup', async (file?: string) => {
+    const backups = store.backups();
+    if (!backups.length) {
+      vscode.window.showInformationMessage('No backups yet. One is saved automatically before every change.');
+      return;
+    }
+    let backup = typeof file === 'string' ? backups.find(b => b.file === file) : undefined;
+    if (!backup) {
+      const picked = await vscode.window.showQuickPick(
+        backups.map(b => ({
+          label: `$(history) ${ago(b.date)}`,
+          description: `${b.hosts} host${b.hosts === 1 ? '' : 's'}`,
+          detail: b.date.toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short' }),
+          b,
+        })),
+        { title: 'Restore the SSH config from a backup', placeHolder: 'Pick the version to go back to', matchOnDetail: true },
+      );
+      backup = picked?.b;
+    }
+    if (!backup) {
+      return;
+    }
+    const ok = await vscode.window.showWarningMessage(
+      `Restore the config from ${ago(backup.date)}?`,
+      { modal: true, detail: `${backup.hosts} host${backup.hosts === 1 ? '' : 's'}, saved ${backup.date.toLocaleString()}.\nThe config as it is now is backed up first, so you can undo this.` },
+      'Restore', 'Compare First',
+    );
+    if (ok === 'Compare First') {
+      await vscode.commands.executeCommand('sshManager.compareBackup', backup.file);
+      return;
+    }
+    if (ok !== 'Restore') {
+      return;
+    }
+    try {
+      store.replace(fs.readFileSync(backup.file, 'utf8'));
+      vscode.window.showInformationMessage(`Config restored from ${ago(backup.date)}.`);
+    } catch (e: any) {
+      vscode.window.showErrorMessage(`SSH Config Manager: could not restore: ${e?.message ?? e}`);
+    }
+  });
+
+  // ---- sync between computers, and the keys that sync never carries
+
+  regPlain('sshManager.syncSetup', () => sync.setup());
+  regPlain('sshManager.syncNow', () => sync.syncNow(true));
+  regPlain('sshManager.syncOff', async () => {
+    if (sync.mode === 'off') {
+      vscode.window.showInformationMessage('Sync is already off.');
+      return;
+    }
+    const ok = await vscode.window.showWarningMessage(
+      'Turn sync off on this computer?',
+      { modal: true, detail: 'This computer keeps its own complete copy of the config. The shared file is not deleted, and your other computers are not affected.' },
+      'Turn Off',
+    );
+    if (ok) {
+      await sync.turnOff();
+    }
+  });
+
+  regPlain('sshManager.checkKeys', async () => {
+    const missing = missingKeys(store.doc, os.homedir());
+    const withKeys = store.doc.hosts.filter(h => !h.disabled && h.options.some(o => o.key.toLowerCase() === 'identityfile')).length;
+    if (!missing.length) {
+      vscode.window.showInformationMessage(
+        withKeys ? `All good: the keys for ${withKeys} host${withKeys === 1 ? '' : 's'} are on this computer.` : 'No host in your config names a key file, so there is nothing to check.',
+      );
+      return;
+    }
+    const byHost = new Map<string, { alias: string; keys: string[] }>();
+    for (const m of missing) {
+      const e = byHost.get(m.hostId) ?? { alias: m.alias, keys: [] };
+      e.keys.push(m.key);
+      byHost.set(m.hostId, e);
+    }
+    const picked = await vscode.window.showQuickPick(
+      [...byHost].map(([id, e]) => ({ label: `$(warning) ${e.alias}`, description: 'key not on this computer', detail: e.keys.join('   '), id })),
+      {
+        title: `${byHost.size} host${byHost.size === 1 ? ' uses' : 's use'} an SSH key that is not on this computer`,
+        placeHolder: 'Copy the key files here yourself, or pick a host to set up a new key for it',
+        matchOnDetail: true,
+      },
+    );
+    const host = picked && store.doc.hosts.find(h => h.id === picked.id);
+    if (host) {
+      await vscode.commands.executeCommand('sshManager.setupKey', { type: 'host', host });
     }
   });
 
@@ -448,8 +545,8 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const picked = await vscode.window.showQuickPick(
-      store.doc.groups.map(g => ({ label: `$(folder-library) ${g.title}`, description: g === node.c.parent ? 'current' : undefined, id: g.id })),
-      { placeHolder: `Move sub-folder "${node.c.title}" to project…` },
+      store.doc.groups.map(g => ({ label: `$(folder) ${g.title}`, description: g === node.c.parent ? 'current' : undefined, id: g.id })),
+      { placeHolder: `Move subfolder "${node.c.title}" to folder…` },
     );
     if (picked) {
       await store.mutate(d => moveSection(d, node.c.id, picked.id));
@@ -769,7 +866,7 @@ export function activate(context: vscode.ExtensionContext): void {
         platform: process.platform,
         alias,
         pub: key.pub,
-        configFile: store.isDefaultPath ? undefined : store.configPath,
+        configFile: store.sshConfigFile,
       }),
     );
     vscode.window.showInformationMessage(
@@ -811,12 +908,12 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   reg('sshManager.addGroup', async () => {
-    const name = await askName('New group name');
+    const name = await askName('New folder name');
     if (!name) {
       return;
     }
     if (store.doc.groups.some(g => g.title.trim().toLowerCase() === name.trim().toLowerCase())) {
-      vscode.window.showWarningMessage(`A group named "${name.trim()}" already exists.`);
+      vscode.window.showWarningMessage(`A folder named "${name.trim()}" already exists.`);
       return;
     }
     await store.mutate(d => addGroup(d, name));
@@ -827,12 +924,12 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const group = node.c.parent ?? node.c;
-    const name = await askName(`New sub-group in "${group.title}"`);
+    const name = await askName(`New subfolder in "${group.title}"`);
     if (!name) {
       return;
     }
     if (group.sections.some(s => s.title.trim().toLowerCase() === name.trim().toLowerCase())) {
-      vscode.window.showWarningMessage(`"${group.title}" already has a sub-group named "${name.trim()}".`);
+      vscode.window.showWarningMessage(`"${group.title}" already has a subfolder named "${name.trim()}".`);
       return;
     }
     await store.mutate(d => addSection(d, group.id, name));
@@ -857,11 +954,17 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     if (c.total > 0 || c.hosts.length > 0) {
-      vscode.window.showInformationMessage(`"${c.title}" still has hosts. Move or delete them first.`);
+      vscode.window.showInformationMessage(`The folder "${c.title}" still has hosts. Move or delete them first (drag them to another folder).`);
       return;
     }
     await store.mutate(d => deleteContainer(d, c.id));
   });
+
+  // first run on this computer: the setup wizard, once (it can be reopened from the ⋯ menu)
+  if (!context.globalState.get<boolean>('wizard.shown')) {
+    void context.globalState.update('wizard.shown', true);
+    setTimeout(() => panels.showWizard(), 800);
+  }
 }
 
 export function deactivate(): void {

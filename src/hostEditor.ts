@@ -149,7 +149,7 @@ function html(webview: vscode.Webview, data: unknown): string {
 
     <h2>Look &amp; organization</h2>
     <div class="grid">
-      <div><label for="container">Group</label><select id="container"></select></div>
+      <div><label for="container">Folder</label><select id="container"></select></div>
       <div><label for="provider">Provider <small>(where it runs)</small></label><select id="provider"></select></div>
       <div><label for="icon">Icon</label><select id="icon"></select></div>
       <div></div>

@@ -1,5 +1,7 @@
+import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { missingKeys } from './keys';
 import { Container, Doc, Host, connectName, containerPath, findContainer, hostTags, isDisabled, moveGroup, skipsSectionLevel, moveHost, moveSection, option, parse, providerOf } from './sshConfig';
 import { HostFilter, emptyFilter, hostMatches, isFilterEmpty } from './search';
 import { Store } from './store';
@@ -80,8 +82,16 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
   /** fires whenever the search text or a filter chip changes, from any place */
   readonly onDidChangeFilter = this.filterChanged.event;
 
+  /** ids of hosts whose SSH key is not on this computer */
+  private missing = new Set<string>();
+
   constructor(private readonly store: Store) {
-    store.onDidChange(() => this.changed.fire());
+    const refresh = () => {
+      this.missing = new Set(missingKeys(store.doc, os.homedir()).map(m => m.hostId));
+      this.changed.fire();
+    };
+    store.onDidChange(refresh);
+    refresh();
   }
 
   setFilter(patch: Partial<HostFilter>): void {
@@ -186,7 +196,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
       item.id = `c|${c.id}|${c.title}${this.idSuffix}`;
       const offGroup = isDisabled(c);
       item.description = offGroup ? `${count} · disabled` : String(count);
-      const groupIcon = c.attrs.icon || (c.kind === 'group' ? 'folder-library' : 'folder');
+      const groupIcon = c.attrs.icon || 'folder'; // folders and subfolders look alike, as in a file explorer
       item.iconPath = offGroup ? new vscode.ThemeIcon(/^[a-z0-9-]+$/.test(groupIcon) ? groupIcon : 'folder', OFF_COLOR) : themeIcon(groupIcon, c.attrs.color);
       item.contextValue = c.kind;
       return item;
@@ -197,7 +207,8 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
     item.id = `${node.fav ? 'fav' : 'h'}|${h.file}|${h.id}`;
     const tags = hostTags(h).map(t => '#' + t).join(' ');
     const fav = isFav(h) && !node.fav ? '★ ' : '';
-    item.description = [fav + hostSummary(h), tags].filter(Boolean).join('  ');
+    const noKey = this.missing.has(h.id);
+    item.description = [fav + hostSummary(h), tags, noKey ? '\u26a0 key not on this computer' : ''].filter(Boolean).join('  ');
     const icon = h.attrs.icon || (settings.autoicon === 'off' ? 'server' : autoIcon(h));
     item.iconPath = themeIcon(icon, h.attrs.color);
     if (h.disabled) {
@@ -205,7 +216,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
       item.iconPath = new vscode.ThemeIcon('circle-slash', OFF_COLOR);
     }
     item.contextValue = h.isPattern ? 'pattern' : h.readonly ? 'hostReadonly' : 'host';
-    item.tooltip = tooltip(h);
+    item.tooltip = tooltip(h, noKey);
     const click = settings.click;
     if (click && click !== 'none' && connectName(h)) {
       item.command = { command: 'sshManager.connect', title: 'Connect', arguments: [node] };
@@ -292,7 +303,7 @@ export function isFav(h: Host): boolean {
   return !!h.attrs.fav && h.attrs.fav !== '0' && !h.readonly && !h.disabled;
 }
 
-function tooltip(h: Host): vscode.MarkdownString {
+function tooltip(h: Host, noKey = false): vscode.MarkdownString {
   const md = new vscode.MarkdownString();
   md.appendMarkdown(`**${esc(h.alias)}**`);
   const detail = hostDetail(h);
@@ -323,6 +334,9 @@ function tooltip(h: Host): vscode.MarkdownString {
     if (!['hostname', 'user'].includes(o.key.toLowerCase())) {
       rows.push([o.key, o.value]);
     }
+  }
+  if (noKey) {
+    rows.push(['\u26a0 Key', 'not on this computer: copy it here, or right-click > Set Up SSH Key\u2026']);
   }
   if (rows.length) {
     md.appendMarkdown('| | |\n|---|---|\n' + rows.map(([k, v]) => `| ${esc(k)} | ${esc(v)} |`).join('\n'));

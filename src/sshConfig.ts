@@ -1045,13 +1045,26 @@ export function setSpacers(doc: Doc, on: boolean): string {
         const line = 'Host ' + S.repeat(i + 1);
         rows.push({ at: g.start, line: isDisabled(g) ? OFF + line : line });
       });
-    // Sub-folders: a "--- NAME ---" row above the first host of each, flush left like the hosts
-    // themselves (real hosts cannot be indented, so an indented header reads upside down).
-    // A zero-width character in front marks the row as decoration; non-breaking spaces stand in
+    // A zero-width character in front marks a row as decoration; non-breaking spaces stand in
     // for the spaces a Host name cannot contain; trailing zero-width characters keep names unique.
-    const style = doc.settings['remote-subfolders'] ?? 'dashes';
     const Z = '\u200b';
     let n = 0;
+    // Folders made in the GUI are `#@group` comments, which Remote-SSH cannot see: without a row
+    // of their own they would show up there as one flat list. Give each a blank row and a
+    // "-----NAME-----" heading, like the separator hosts of a hand-written file.
+    const written = clean.groups.filter(g => g.markers.some(m => m.kind === 'separator')).length;
+    clean.groups
+      .filter(g => !g.markers.some(m => m.kind === 'separator') && g.total > 0)
+      .forEach((g, i) => {
+        n++;
+        const dis = isDisabled(g) ? OFF : '';
+        const name = g.title.trim().replace(/\s+/g, '\u00a0');
+        rows.push({ at: g.start, line: dis + 'Host ' + S.repeat(written + i + 1) });
+        rows.push({ at: g.headerEnd, line: `${dis}Host ${Z}-----------${name}-----------${Z.repeat(n)}` });
+      });
+    // Sub-folders: a "--- NAME ---" row above the first host of each, flush left like the hosts
+    // themselves (real hosts cannot be indented, so an indented header reads upside down).
+    const style = doc.settings['remote-subfolders'] ?? 'dashes';
     for (const g of clean.groups) {
       if (g.sections.length === 1 && !g.hosts.length) {
         continue; // one sub-folder holding everything is not worth a row
@@ -1087,4 +1100,51 @@ export function setSettings(doc: Doc, patch: Record<string, string | undefined>)
     L.splice(0, 0, line);
   }
   return finish(doc, L);
+}
+
+// ---------------------------------------------------------------- finishing every save
+
+/**
+ * Whether the stock Remote-SSH host list gets its formatting rows (blank rows between folders,
+ * folder and sub-folder headings, favorites on top). `remote-picker=on|off` in the settings line
+ * decides; with no choice recorded it is on as soon as the file has folders, so a new user's
+ * Remote-SSH list looks organized without finding the setting first.
+ */
+export function pickerFormatting(doc: Doc): 'on' | 'off' {
+  const choice = doc.settings['remote-picker'];
+  if (choice === 'on' || choice === 'off') {
+    return choice;
+  }
+  return doc.spacers.length > 0 || doc.groups.length > 0 ? 'on' : 'off';
+}
+
+/**
+ * Last step of every save: applies the Remote-SSH list formatting (see pickerFormatting) and
+ * keeps the generated favorites block in step with the stars.
+ * `autoEnabled` is true the one time the formatting is switched on by default, so the caller
+ * can tell the user and offer to turn it off.
+ */
+export function finalize(text: string, file = ''): { text: string; autoEnabled: boolean } {
+  let doc = parse(text, file);
+  let autoEnabled = false;
+  if (pickerFormatting(doc) === 'on') {
+    if (doc.settings['remote-picker'] === undefined) {
+      autoEnabled = doc.spacers.length === 0;
+      // favorites on top come with the default; a file that already had its rows keeps its own choice
+      const favorites = doc.settings['remote-favorites'] ?? (autoEnabled ? 'on' : undefined);
+      doc = parse(setSettings(doc, { 'remote-picker': 'on', 'remote-favorites': favorites }), file);
+    }
+    doc = parse(setSpacers(doc, true), file);
+  } else if (doc.spacers.length) {
+    doc = parse(setSpacers(doc, false), file);
+  }
+  return { text: syncMirror(doc), autoEnabled };
+}
+
+/** Turns the Remote-SSH list formatting on or off and records the choice in the file. */
+export function setPickerFormatting(doc: Doc, on: boolean): string {
+  // favorites on top are part of the formatted list unless the user decided otherwise
+  const favorites = doc.settings['remote-favorites'] ?? (on ? 'on' : undefined);
+  const withChoice = parse(setSettings(doc, { 'remote-picker': on ? 'on' : 'off', 'remote-favorites': favorites }), doc.file);
+  return setSpacers(withChoice, on);
 }

@@ -92,7 +92,39 @@
         "sshManager.configFile": {
           "type": "string",
           "default": "~/.ssh/config",
+          "scope": "machine",
           "description": "Path of the SSH config file to manage. Every other setting lives inside that file as a '#@ssh-manager' comment."
+        },
+        "sshManager.backup.keep": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "maximum": 500,
+          "markdownDescription": "How many backups to keep. A backup is saved in the `ssh-config-backups` folder next to the config file before every change."
+        },
+        "sshManager.sync.mode": {
+          "type": "string",
+          "enum": [
+            "off",
+            "copy",
+            "link",
+            "include"
+          ],
+          "default": "off",
+          "scope": "machine",
+          "enumDescriptions": [
+            "Not syncing.",
+            "Copy both ways between the config and the shared file.",
+            "The config is a link to the shared file.",
+            "~/.ssh/config includes the shared file."
+          ],
+          "markdownDescription": "How this computer shares its SSH config with your other computers. Set it up with **SSH Manager: Set Up Sync Between Computers…** rather than by hand."
+        },
+        "sshManager.sync.file": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "The shared config file in a synced folder (Dropbox, iCloud Drive, OneDrive, …). SSH keys are never synced."
         }
       }
     },
@@ -103,32 +135,118 @@
         "mac": "cmd+alt+s"
       },
       {
+        "command": "sshManager.connect",
+        "key": "enter",
+        "mac": "enter",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == host"
+      },
+      {
+        "command": "sshManager.connectNewWindow",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == host"
+      },
+      {
+        "command": "sshManager.connectTerminal",
+        "key": "alt+enter",
+        "mac": "alt+enter",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == host"
+      },
+      {
+        "command": "sshManager.copySsh",
+        "key": "ctrl+c",
+        "mac": "cmd+c",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == host"
+      },
+      {
+        "command": "sshManager.addHost",
+        "key": "ctrl+n",
+        "mac": "cmd+n",
+        "when": "focusedView == sshManager.hosts"
+      },
+      {
+        "command": "sshManager.addGroup",
+        "key": "ctrl+shift+n",
+        "mac": "cmd+shift+n",
+        "when": "focusedView == sshManager.hosts"
+      },
+      {
+        "command": "sshManager.editHost",
+        "key": "f2",
+        "mac": "f2",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == host"
+      },
+      {
+        "command": "sshManager.renameGroup",
+        "key": "f2",
+        "mac": "f2",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == folder"
+      },
+      {
+        "command": "sshManager.duplicateHost",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == host"
+      },
+      {
+        "command": "sshManager.toggleFavorite",
+        "key": "ctrl+d",
+        "mac": "cmd+d",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == host"
+      },
+      {
         "command": "sshManager.moveUp",
         "key": "alt+up",
+        "mac": "alt+up",
         "when": "focusedView == sshManager.hosts"
       },
       {
         "command": "sshManager.moveDown",
         "key": "alt+down",
+        "mac": "alt+down",
+        "when": "focusedView == sshManager.hosts"
+      },
+      {
+        "command": "sshManager.deleteHost",
+        "key": "delete",
+        "mac": "cmd+backspace",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == host"
+      },
+      {
+        "command": "sshManager.deleteGroup",
+        "key": "delete",
+        "mac": "cmd+backspace",
+        "when": "focusedView == sshManager.hosts && sshManager.selection == folder"
+      },
+      {
+        "command": "sshManager.filter",
+        "key": "ctrl+f",
+        "mac": "cmd+f",
+        "when": "focusedView == sshManager.hosts"
+      },
+      {
+        "command": "sshManager.settingsPage",
+        "key": "ctrl+,",
+        "mac": "cmd+,",
         "when": "focusedView == sshManager.hosts"
       }
     ],
     "commands": [
       {
         "command": "sshManager.addHost",
-        "title": "Add Host",
+        "title": "New Host",
         "category": "SSH Manager",
         "icon": "$(add)"
       },
       {
         "command": "sshManager.addGroup",
-        "title": "Add Group",
+        "title": "New Folder",
         "category": "SSH Manager",
         "icon": "$(new-folder)"
       },
       {
         "command": "sshManager.addSection",
-        "title": "Add Sub-group",
+        "title": "New Subfolder",
         "category": "SSH Manager",
         "icon": "$(new-folder)"
       },
@@ -158,7 +276,7 @@
       },
       {
         "command": "sshManager.settings",
-        "title": "Settings (stored in config file)",
+        "title": "Settings",
         "category": "SSH Manager",
         "icon": "$(gear)"
       },
@@ -170,7 +288,7 @@
       },
       {
         "command": "sshManager.remoteSpacing",
-        "title": "Remote-SSH Picker Spacing…",
+        "title": "Format Remote-SSH Host List…",
         "category": "SSH Manager"
       },
       {
@@ -214,12 +332,12 @@
       },
       {
         "command": "sshManager.moveHost",
-        "title": "Move to Group…",
+        "title": "Move to Folder…",
         "category": "SSH Manager"
       },
       {
         "command": "sshManager.moveSection",
-        "title": "Move to Project…",
+        "title": "Move to Another Folder…",
         "category": "SSH Manager"
       },
       {
@@ -295,8 +413,78 @@
       },
       {
         "command": "sshManager.deleteGroup",
-        "title": "Delete (only when empty)",
+        "title": "Delete Folder",
         "category": "SSH Manager"
+      },
+      {
+        "command": "sshManager.settingsPage",
+        "title": "Open Settings",
+        "category": "SSH Manager",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "sshManager.wizard",
+        "title": "Setup Wizard",
+        "category": "SSH Manager",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "sshManager.walkthrough",
+        "title": "Open the Get Started Guide",
+        "category": "SSH Manager",
+        "icon": "$(book)"
+      },
+      {
+        "command": "sshManager.shortcuts",
+        "title": "Keyboard Shortcuts",
+        "category": "SSH Manager",
+        "icon": "$(keyboard)"
+      },
+      {
+        "command": "sshManager.backupNow",
+        "title": "Back Up Now",
+        "category": "SSH Manager",
+        "icon": "$(save)"
+      },
+      {
+        "command": "sshManager.restoreBackup",
+        "title": "Restore from Backup…",
+        "category": "SSH Manager",
+        "icon": "$(history)"
+      },
+      {
+        "command": "sshManager.openBackups",
+        "title": "Open Backups Folder",
+        "category": "SSH Manager",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "sshManager.compareBackup",
+        "title": "Compare Backup with Current Config",
+        "category": "SSH Manager"
+      },
+      {
+        "command": "sshManager.syncSetup",
+        "title": "Set Up Sync Between Computers…",
+        "category": "SSH Manager",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "sshManager.syncNow",
+        "title": "Sync Now",
+        "category": "SSH Manager",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "sshManager.syncOff",
+        "title": "Turn Sync Off",
+        "category": "SSH Manager"
+      },
+      {
+        "command": "sshManager.checkKeys",
+        "title": "Check SSH Keys on This Computer",
+        "category": "SSH Manager",
+        "icon": "$(key)"
       }
     ],
     "menus": {
@@ -356,6 +544,14 @@
         {
           "command": "sshManager.copyHostName",
           "when": "false"
+        },
+        {
+          "command": "sshManager.settings",
+          "when": "false"
+        },
+        {
+          "command": "sshManager.compareBackup",
+          "when": "false"
         }
       ],
       "view/title": [
@@ -390,19 +586,49 @@
           "group": "navigation@4"
         },
         {
-          "command": "sshManager.openConfig",
-          "when": "view == sshManager.hosts",
-          "group": "z@1"
-        },
-        {
           "command": "sshManager.settings",
           "when": "view == sshManager.hosts",
-          "group": "z@2"
+          "group": "1_settings@1"
+        },
+        {
+          "command": "sshManager.openConfig",
+          "when": "view == sshManager.hosts",
+          "group": "1_settings@2"
         },
         {
           "command": "sshManager.remoteSpacing",
           "when": "view == sshManager.hosts",
-          "group": "z@3"
+          "group": "1_settings@3"
+        },
+        {
+          "command": "sshManager.backupNow",
+          "when": "view == sshManager.hosts",
+          "group": "2_data@1"
+        },
+        {
+          "command": "sshManager.restoreBackup",
+          "when": "view == sshManager.hosts",
+          "group": "2_data@2"
+        },
+        {
+          "command": "sshManager.syncSetup",
+          "when": "view == sshManager.hosts",
+          "group": "2_data@3"
+        },
+        {
+          "command": "sshManager.checkKeys",
+          "when": "view == sshManager.hosts",
+          "group": "2_data@4"
+        },
+        {
+          "command": "sshManager.shortcuts",
+          "when": "view == sshManager.hosts",
+          "group": "3_help@1"
+        },
+        {
+          "command": "sshManager.wizard",
+          "when": "view == sshManager.hosts",
+          "group": "3_help@2"
         }
       ],
       "view/item/context": [
@@ -552,12 +778,123 @@
           "group": "9_delete@1"
         }
       ]
+    },
+    "walkthroughs": [
+      {
+        "id": "sshManager.gettingStarted",
+        "title": "Get Started with SSH Config Manager",
+        "description": "Organize your SSH hosts in folders, tidy the Remote-SSH list, and keep the config backed up and in sync.",
+        "steps": [
+          {
+            "id": "wizard",
+            "title": "Take the one-minute setup",
+            "description": "The setup wizard walks through everything below, one screen at a time. You can run it again whenever you like.\n[Open the Setup Wizard](command:sshManager.wizard)",
+            "media": {
+              "image": "media/art/welcome.jpg",
+              "altText": "A terminal window connected to a stack of servers"
+            },
+            "completionEvents": [
+              "onCommand:sshManager.wizard"
+            ]
+          },
+          {
+            "id": "folders",
+            "title": "Organize hosts in folders",
+            "description": "Make a folder for each project or customer, with subfolders inside for things like Production and Staging. Drag hosts between them.\n[New Folder](command:sshManager.addGroup)",
+            "media": {
+              "image": "media/art/folders.jpg",
+              "altText": "A folder holding two subfolders of servers"
+            },
+            "completionEvents": [
+              "onCommand:sshManager.addGroup"
+            ]
+          },
+          {
+            "id": "picker",
+            "title": "Tidy the Remote-SSH list",
+            "description": "VS Code’s own “Connect to Host” list can show the same folders, with headings and a gap between them.\n[Format the Remote-SSH List](command:sshManager.remoteSpacing)",
+            "media": {
+              "image": "media/art/picker.jpg",
+              "altText": "A list of hosts arranged in groups"
+            },
+            "completionEvents": [
+              "onCommand:sshManager.remoteSpacing"
+            ]
+          },
+          {
+            "id": "backup",
+            "title": "Backups you can restore",
+            "description": "A copy of the config is saved in a folder next to it before every change.\n[Back Up Now](command:sshManager.backupNow)\n[Restore from a Backup](command:sshManager.restoreBackup)",
+            "media": {
+              "image": "media/art/backup.jpg",
+              "altText": "A stack of saved copies with a restore arrow"
+            },
+            "completionEvents": [
+              "onCommand:sshManager.backupNow"
+            ]
+          },
+          {
+            "id": "sync",
+            "title": "The same hosts on every computer",
+            "description": "Share the config through a file in Dropbox, iCloud Drive or OneDrive. Your SSH keys are never synced: copy them to each computer yourself.\n[Set Up Sync](command:sshManager.syncSetup)",
+            "media": {
+              "image": "media/art/sync.jpg",
+              "altText": "A laptop and a desktop sharing a file through the cloud"
+            },
+            "completionEvents": [
+              "onCommand:sshManager.syncSetup"
+            ]
+          },
+          {
+            "id": "keys",
+            "title": "Check your SSH keys",
+            "description": "See which hosts use a key that is not on this computer, and set up a new one in a single step.\n[Check SSH Keys](command:sshManager.checkKeys)",
+            "media": {
+              "image": "media/art/keys.jpg",
+              "altText": "A key next to a locked server"
+            },
+            "completionEvents": [
+              "onCommand:sshManager.checkKeys"
+            ]
+          },
+          {
+            "id": "shortcuts",
+            "title": "Work from the keyboard",
+            "description": "Enter connects, F2 edits, and there is a shortcut for most actions in the panel.\n[Show the Shortcuts](command:sshManager.shortcuts)",
+            "media": {
+              "image": "media/art/shortcuts.jpg",
+              "altText": "A keyboard with three keys highlighted"
+            },
+            "completionEvents": [
+              "onCommand:sshManager.shortcuts"
+            ]
+          },
+          {
+            "id": "settings",
+            "title": "Make it yours",
+            "description": "Every option on one page, with a live preview of the Remote-SSH list.\n[Open Settings](command:sshManager.settingsPage)",
+            "media": {
+              "image": "media/art/settings.jpg",
+              "altText": "A panel of sliders and switches"
+            },
+            "completionEvents": [
+              "onCommand:sshManager.settingsPage"
+            ]
+          }
+        ]
+      }
+    ],
+    "configurationDefaults": {
+      "[ssh_config]": {
+        "editor.unicodeHighlight.invisibleCharacters": false,
+        "editor.unicodeHighlight.ambiguousCharacters": false
+      }
     }
   },
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node test/parser.test.js && node test/features.test.js",
+    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js",
     "vscode:prepublish": "npm run compile",
     "package": "vsce package",
     "publish": "vsce publish"

@@ -2,7 +2,9 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { Doc, parse, setSpacers, syncMirror } from './sshConfig';
+import { Backup, backupDir, listBackups, writeBackup } from './backups';
+import { Doc, finalize, parse } from './sshConfig';
+import { hasInclude } from './sync';
 
 export function expandHome(p: string): string {
   return p === '~' || p.startsWith('~/') ? path.join(os.homedir(), p.slice(1)) : p;
@@ -13,10 +15,15 @@ export function collapseHome(p: string): string {
   return p === home || p.startsWith(home + path.sep) ? '~' + p.slice(home.length) : p;
 }
 
-/** Owns the config file on disk: loads it, watches it, and is the only thing that writes it. */
+export const DEFAULT_CONFIG = path.join(os.homedir(), '.ssh', 'config');
+
+/** Owns the config file on disk: loads it, watches it, backs it up, and is the only thing that writes it. */
 export class Store implements vscode.Disposable {
   private readonly changed = new vscode.EventEmitter<void>();
   readonly onDidChange = this.changed.event;
+  private readonly autoFormatted = new vscode.EventEmitter<void>();
+  /** fires the one time the Remote-SSH list formatting is switched on by default */
+  readonly onDidAutoFormat = this.autoFormatted.event;
 
   doc: Doc = parse('');
   included: Doc[] = [];
@@ -25,7 +32,8 @@ export class Store implements vscode.Disposable {
   private watched: string | undefined;
   private lastText = '';
 
-  constructor(private readonly backupDir: string) {
+  /** `legacyBackupDir`: where versions before 0.6 kept backups; still listed for restore. */
+  constructor(private readonly legacyBackupDir: string) {
     this.reload();
   }
 
@@ -35,7 +43,34 @@ export class Store implements vscode.Disposable {
   }
 
   get isDefaultPath(): boolean {
-    return this.configPath === path.join(os.homedir(), '.ssh', 'config');
+    return this.configPath === DEFAULT_CONFIG;
+  }
+
+  /** The file's current text as last read from disk. */
+  get text(): string {
+    return this.lastText;
+  }
+
+  get exists(): boolean {
+    return fs.existsSync(this.configPath);
+  }
+
+  /**
+   * `-F <file>` for ssh when it would not read this config on its own: not needed for
+   * ~/.ssh/config, nor for a shared file that ~/.ssh/config pulls in with Include.
+   */
+  get sshConfigFile(): string | undefined {
+    if (this.isDefaultPath) {
+      return undefined;
+    }
+    try {
+      if (hasInclude(fs.readFileSync(DEFAULT_CONFIG, 'utf8'), this.configPath)) {
+        return undefined;
+      }
+    } catch {
+      // no ~/.ssh/config
+    }
+    return this.configPath;
   }
 
   reload(): void {
@@ -67,22 +102,12 @@ export class Store implements vscode.Disposable {
       if (edited === this.lastText) {
         return true;
       }
-      const file = this.configPath;
-      // keep the generated favorites block (if that setting is on) in step with the edit
-      // and, when the Remote-SSH picker rows are in use, rebuild them so new or renamed folders get theirs
-      let after = parse(edited, file);
-      if (after.spacers.length) {
-        after = parse(setSpacers(after, true), file);
+      // Remote-SSH list rows and the generated favorites block are rebuilt on every save
+      const { text: next, autoEnabled } = finalize(edited, this.configPath);
+      this.write(next);
+      if (autoEnabled) {
+        this.autoFormatted.fire();
       }
-      const next = syncMirror(after);
-      if (fs.existsSync(file)) {
-        this.backup(this.lastText);
-        fs.writeFileSync(file, next); // follows symlinks, keeps permissions
-      } else {
-        fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
-        fs.writeFileSync(file, next, { mode: 0o600 });
-      }
-      this.reload();
       return true;
     } catch (e: any) {
       vscode.window.showErrorMessage(`SSH Config Manager: ${e?.message ?? e}`);
@@ -90,15 +115,51 @@ export class Store implements vscode.Disposable {
     }
   }
 
+  /** Replaces the whole file (restore, or a newer copy from another computer). The old content is backed up first. */
+  replace(text: string): void {
+    this.reload();
+    if (text !== this.lastText) {
+      this.write(text);
+    }
+  }
+
+  private write(next: string): void {
+    const file = this.configPath;
+    if (fs.existsSync(file)) {
+      this.backup(this.lastText);
+      fs.writeFileSync(file, next); // follows symlinks, keeps permissions
+    } else {
+      fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
+      fs.writeFileSync(file, next, { mode: 0o600 });
+    }
+    this.reload();
+  }
+
+  // ---- backups: a folder next to the config file
+
+  get backupDir(): string {
+    return backupDir(this.configPath);
+  }
+
+  private get keep(): number {
+    const n = vscode.workspace.getConfiguration('sshManager').get<number>('backup.keep') ?? 30;
+    return Math.min(500, Math.max(1, Math.floor(n)));
+  }
+
+  /** Newest first; includes the ones older versions kept in VS Code's own storage. */
+  backups(): Backup[] {
+    return [...listBackups(this.backupDir), ...listBackups(this.legacyBackupDir)].sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+
+  /** Saves the current file as a backup now. Returns the file, or undefined when nothing changed since the last one. */
+  backupNow(): string | undefined {
+    this.reload();
+    return writeBackup(this.backupDir, this.lastText, this.keep);
+  }
+
   private backup(text: string): void {
     try {
-      fs.mkdirSync(this.backupDir, { recursive: true });
-      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-      fs.writeFileSync(path.join(this.backupDir, `config-${stamp}.bak`), text, { mode: 0o600 });
-      const old = fs.readdirSync(this.backupDir).filter(f => f.endsWith('.bak')).sort();
-      for (const f of old.slice(0, Math.max(0, old.length - 20))) {
-        fs.unlinkSync(path.join(this.backupDir, f));
-      }
+      writeBackup(this.backupDir, text, this.keep);
     } catch {
       // a failed backup must not block the edit
     }
@@ -169,5 +230,6 @@ export class Store implements vscode.Disposable {
   dispose(): void {
     this.unwatch();
     this.changed.dispose();
+    this.autoFormatted.dispose();
   }
 }
