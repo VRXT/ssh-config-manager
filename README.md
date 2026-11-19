@@ -92,6 +92,9 @@ elsewhere, or the **SSH** button in the status bar).
 
 ![Quick connect picker grouped by folder](images/quick-connect.png)
 
+The list keeps your folders and each icon's color, and shows the same small status dot as the Hosts
+panel: green for up, red for down, yellow on a folder with a mix.
+
 **Not only in Microsoft's VS Code.** Opening a host in a window uses whichever SSH extension your
 editor has: *Remote - SSH* in VS Code, Cursor's own in Cursor, *Open Remote - SSH* in VSCodium and
 other builds. If none is installed, you are told which one to get. Connecting in a terminal needs

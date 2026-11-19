@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.1
 
 - **Quick connect** list: the big emoji dots are gone. Each row keeps its place in the folder tree and
   shows the host's or folder's icon in its own color, with the same small status dot as the Hosts
