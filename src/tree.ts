@@ -91,7 +91,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
   health: (alias: string | undefined) => HealthResult | undefined = () => undefined;
 
   /** the host's icon with a small status dot drawn on it; undefined = keep the plain icon */
-  statusIcon: (icon: string, color: string | undefined, status: DotStatus) => { light: vscode.Uri; dark: vscode.Uri } | undefined = () => undefined;
+  statusIcon: (icon: string, color: string | undefined, status: DotStatus | undefined) => { light: vscode.Uri; dark: vscode.Uri } | undefined = () => undefined;
 
   /** Redraws the list, for state that lives outside the config file (server status). */
   redraw(): void {

@@ -31,15 +31,23 @@ const DOT_COLORS: Record<Theme, Record<DotStatus, string>> = {
 const known = (icon: string) => (ICON_SHAPES[icon] ? icon : 'server');
 
 /** Name of one variant; everything that changes the picture is in it. */
-export function statusIconName(icon: string, color: string | undefined, status: DotStatus, animate: boolean, theme: Theme): string {
+export function statusIconName(icon: string, color: string | undefined, status: DotStatus | undefined, animate: boolean, theme: Theme): string {
   const c = color && ICON_COLORS.dark[color] ? color : 'plain';
-  return `${known(icon)}-${c}-${status}${animate ? '-a' : ''}-${theme}.svg`;
+  return `${known(icon)}-${c}-${status ?? 'none'}${animate && status ? '-a' : ''}-${theme}.svg`;
 }
 
-export function statusIconSvg(icon: string, color: string | undefined, status: DotStatus, animate: boolean, theme: Theme): string {
+/** True when the icon can be drawn here (the others stay built-in icons, without a dot). */
+export const canDraw = (icon: string) => !!ICON_SHAPES[icon];
+
+/** Without a status the icon is drawn alone, in its color: for lists where VS Code does not color icons. */
+export function statusIconSvg(icon: string, color: string | undefined, status: DotStatus | undefined, animate: boolean, theme: Theme): string {
   const fill = ICON_COLORS[theme][color && ICON_COLORS[theme][color] ? color : ''];
-  const dot = DOT_COLORS[theme][status];
   const shape = ICON_SHAPES[known(icon)];
+  const body = shape.box === 16 ? shape.body : `<g transform="scale(${16 / shape.box})">${shape.body}</g>`;
+  if (!status) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><g fill="${fill}">${body}</g></svg>`;
+  }
+  const dot = DOT_COLORS[theme][status];
   const X = 12.25, Y = 12.25, R = 2.5;
   // up (and mixed, in yellow): a soft ring that spreads and fades, like a heartbeat. down: a slow blink. People who asked
   // their system for less motion get a still dot.
@@ -57,6 +65,6 @@ export function statusIconSvg(icon: string, color: string | undefined, status: D
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">${css}` +
     `<mask id="m"><rect width="16" height="16" fill="#fff"/><circle cx="${X}" cy="${Y}" r="${R + 1.5}" fill="#000"/></mask>` +
-    `<g mask="url(#m)" fill="${fill}">${shape.box === 16 ? shape.body : `<g transform="scale(${16 / shape.box})">${shape.body}</g>`}</g>${ring}${mark}</svg>`
+    `<g mask="url(#m)" fill="${fill}">${body}</g>${ring}${mark}</svg>`
   );
 }
