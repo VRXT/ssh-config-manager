@@ -1,7 +1,8 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { HEALTH_DOTS, HealthResult, HealthStatus, describeHealth } from './health';
+import { HEALTH_DOTS, HealthResult, describeHealth } from './health';
+import { DotStatus, folderStatus } from './statusIcon';
 import { missingKeys } from './keys';
 import { Container, Doc, Host, connectName, containerPath, findContainer, hostTags, isDisabled, moveGroup, skipsSectionLevel, moveHost, moveSection, option, parse, providerOf } from './sshConfig';
 import { HostFilter, emptyFilter, hostMatches, isFilterEmpty } from './search';
@@ -90,16 +91,17 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
   health: (alias: string | undefined) => HealthResult | undefined = () => undefined;
 
   /** the host's icon with a small status dot drawn on it; undefined = keep the plain icon */
-  statusIcon: (icon: string, color: string | undefined, status: HealthStatus) => { light: vscode.Uri; dark: vscode.Uri } | undefined = () => undefined;
+  statusIcon: (icon: string, color: string | undefined, status: DotStatus) => { light: vscode.Uri; dark: vscode.Uri } | undefined = () => undefined;
 
   /** Redraws the list, for state that lives outside the config file (server status). */
   redraw(): void {
     this.changed.fire();
   }
 
-  private downIn(c: Container): number {
+  /** up / down state of the hosts in a folder, subfolders included */
+  private statusesIn(c: Container) {
     const hosts = c.kind === 'group' ? [...c.hosts, ...c.sections.flatMap(s => s.hosts)] : c.hosts;
-    return hosts.filter(h => !h.disabled && this.health(connectName(h))?.status === 'down').length;
+    return hosts.filter(h => !h.disabled).map(h => this.health(connectName(h))?.status);
   }
 
   constructor(private readonly store: Store) {
@@ -212,10 +214,14 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
       const item = new vscode.TreeItem(c.title, expanded);
       item.id = `c|${c.id}|${c.title}${this.idSuffix}`;
       const offGroup = isDisabled(c);
-      const down = offGroup ? 0 : this.downIn(c);
+      const inside = offGroup ? [] : this.statusesIn(c);
+      const down = inside.filter(s => s === 'down').length;
+      const dot = folderStatus(inside); // green = all up, red = all down, yellow = some of each
       item.description = offGroup ? `${count} · disabled` : down ? `${count} · ${down} down` : String(count);
       const groupIcon = c.attrs.icon || 'folder'; // folders and subfolders look alike, as in a file explorer
-      item.iconPath = offGroup ? new vscode.ThemeIcon(/^[a-z0-9-]+$/.test(groupIcon) ? groupIcon : 'folder', OFF_COLOR) : themeIcon(groupIcon, c.attrs.color);
+      item.iconPath = offGroup
+        ? new vscode.ThemeIcon(/^[a-z0-9-]+$/.test(groupIcon) ? groupIcon : 'folder', OFF_COLOR)
+        : (dot && this.statusIcon(groupIcon, c.attrs.color, dot)) || themeIcon(groupIcon, c.attrs.color);
       item.contextValue = c.kind;
       return item;
     }

@@ -44,7 +44,7 @@ function statusBlock(S) {
       item('Animate the dot', 'A soft pulse while a server is up, a slow blink while it is down.', toggle(h.animation, v => send('health', { key: 'animation', value: v }), 'Animate the dot', h.check === 'off')),
       item('Check now', 'The Refresh button of the Hosts panel does the same.', btn('Check Now', () => send('command', { id: 'sshManager.checkHealth' }), 'ghost'))),
     note('One host, another way', 'Right-click a host → Set Status Check… to give it its own check: SSH port, ping, a web address such as https://example.com/health, or none.', true),
-    el('p', { class: 'muted small gap-t' }, 'Green = up, red = down, a grey ring = not checked. Hosts behind a jump host cannot be reached from this computer directly, so they stay grey unless you give them a web address. For the reason a host is down, right-click it → Test Connection…'),
+    el('p', { class: 'muted small gap-t' }, 'Green = up, red = down, a grey ring = not checked. A folder is yellow when some of its hosts are up and some are down. Hosts behind a jump host cannot be reached from this computer directly, so they stay grey unless you give them a web address. For the reason a host is down, right-click it → Test Connection…'),
   ];
 }
 

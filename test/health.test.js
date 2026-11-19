@@ -144,6 +144,20 @@ test('the status icon: the host’s own icon and color with a dot, animated only
   }
 });
 
+test('a folder is green when all its hosts are up, red when all are down, yellow when mixed', () => {
+  const si = require('../out/statusIcon');
+  assert.strictEqual(si.folderStatus(['up', 'up']), 'up');
+  assert.strictEqual(si.folderStatus(['down', 'down']), 'down');
+  assert.strictEqual(si.folderStatus(['up', 'down', 'up']), 'mixed');
+  assert.strictEqual(si.folderStatus(['up', 'unknown', undefined]), 'up', 'hosts that are not checked do not count');
+  assert.strictEqual(si.folderStatus(['unknown', undefined]), undefined);
+  assert.strictEqual(si.folderStatus([]), undefined);
+  const mixed = si.statusIconSvg('folder', 'blue', 'mixed', true, 'dark');
+  assert.match(mixed, /#e3b341/);
+  assert.match(mixed, /animation:/);
+  assert.strictEqual(si.statusIconName('folder', undefined, 'mixed', false, 'light'), 'folder-plain-mixed-light.svg');
+});
+
 (async () => {
   let n = 0;
   for (const [name, fn] of tests) {

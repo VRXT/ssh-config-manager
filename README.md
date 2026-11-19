@@ -174,7 +174,8 @@ always runs on your computer, also from a window that is connected to a remote.
 
 A small dot on every host's icon shows whether the server answers right now: green = up,
 red = down, a grey ring = not checked. The green dot pulses softly and the red one blinks (switch
-the animation off in the settings if you prefer a still dot). A folder shows how many of its hosts are down, and the tooltip of a host tells how
+the animation off in the settings if you prefer a still dot). A folder gets a dot too: green when
+all its hosts are up, red when all are down, **yellow when some are up and some are down**. It also shows how many of its hosts are down, and the tooltip of a host tells how
 it was checked, how long the answer took and when.
 
 Choose how to check in **Settings → Server status**:
