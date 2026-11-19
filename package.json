@@ -386,6 +386,12 @@
         "icon": "$(folder-opened)"
       },
       {
+        "command": "sshManager.testConnection",
+        "title": "Test Connection…",
+        "category": "SSH Manager",
+        "icon": "$(pulse)"
+      },
+      {
         "command": "sshManager.setupKey",
         "title": "Set Up SSH Key…",
         "category": "SSH Manager",
@@ -713,6 +719,11 @@
           "group": "1_connect@4"
         },
         {
+          "command": "sshManager.testConnection",
+          "when": "view == sshManager.hosts && viewItem =~ /^host/",
+          "group": "1_connect@5"
+        },
+        {
           "command": "sshManager.setupKey",
           "when": "view == sshManager.hosts && viewItem =~ /^host/",
           "group": "4_key@1"
@@ -894,7 +905,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js",
+    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js && node test/doctor.test.js",
     "vscode:prepublish": "npm run compile",
     "package": "vsce package",
     "publish": "vsce publish",

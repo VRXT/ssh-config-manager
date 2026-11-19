@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Test Connection…** on any host: a checklist of the steps `ssh` takes (config, name lookup, port,
+  key file, agent, server identity, login) that shows which one fails, why, and the fix next to it:
+  make the key private, set up a key, add it to the agent, use only this key, forget a changed
+  server key, or edit the host. **Copy Report** gives the result as text, without keys or passwords
+
 ## 0.6.2
 
 - **Works in Cursor, VSCodium and other VS Code builds.** Opening a host in a window no longer

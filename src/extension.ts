@@ -9,6 +9,7 @@ import {
   PROVIDERS, findContainer, findHost, hostTags, hostToForm, optionAll, isDisabled, moveGroup, moveHost, moveSection, option, parse, renameContainer, setContainerAttrs, setContainerEnabled, setHostAttrs, setHostEnabled, setPickerFormatting, skipsSectionLevel,
 } from './sshConfig';
 import { ago } from './backups';
+import { DoctorPanels } from './doctorPanel';
 import { openHostEditor } from './hostEditor';
 import { Panels } from './panels';
 import { describeFilter, emptyFilter } from './search';
@@ -216,6 +217,9 @@ export function activate(context: vscode.ExtensionContext): void {
     term.show();
     term.sendText(cmd);
   };
+
+  const doctor = new DoctorPanels(context, store, runLocal);
+  context.subscriptions.push(doctor);
 
   const connectTerminal = async (h: Host) => {
     const cmd = sshCommand(h);
@@ -757,6 +761,22 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     await store.mutate(doc => setHostAttrs(doc, h.id, { folder: value.trim() || undefined }));
+  });
+
+  // ---- connection test: why does this host not connect, and what fixes it
+
+  reg('sshManager.testConnection', async node => {
+    const h = await pickHost(node);
+    const alias = h && connectName(h);
+    if (!h || !alias) {
+      if (h) {
+        vscode.window.showInformationMessage(
+          h.disabled ? `"${h.alias}" is disabled. Enable it first.` : `"${h.alias}" is a pattern, not a host you can connect to.`,
+        );
+      }
+      return;
+    }
+    doctor.test(alias);
   });
 
   reg('sshManager.setupKey', async node => {

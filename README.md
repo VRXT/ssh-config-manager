@@ -30,6 +30,7 @@ OpenSSH ignores, so `ssh`, Remote-SSH and every other tool keep working exactly 
 - **Backups** next to the config file before every change, with one-click restore
 - **Sync** between your computers through a file in Dropbox, iCloud Drive or OneDrive
 - **SSH key help**: see which hosts need a key that is not on this computer, and set one up in one step
+- **Test Connection**: when a host will not connect, a checklist shows which step fails and how to fix it
 - **Keyboard shortcuts** for almost everything, shown in the menus
 - **A setup wizard** on first run and a **settings page** you can open any time
 
@@ -165,6 +166,32 @@ Right-click a host → **Set Up SSH Key…** to fix it in one step:
 
 It goes through `ssh <host>`, so `User`, `Port`, `ProxyJump` and the rest of the config apply, and it
 always runs on your computer, also from a window that is connected to a remote.
+
+## When a host will not connect
+
+Right-click a host → **Test Connection…**. A checklist runs the steps `ssh` takes, in order, and
+stops guessing for you:
+
+| Step | What it checks |
+|---|---|
+| **Read the ssh config** | What `ssh` will really use for this host: address, user, port, keys |
+| **Find the server** | The name resolves to an address |
+| **Reach the SSH port** | Something answers on the port (firewall, VPN, wrong port) |
+| **Check the key file** | The key exists, is private (not readable by others), and whether it has a passphrase |
+| **Check the SSH agent** | Which keys the agent holds |
+| **Check the server's identity** | The server is known, or its stored key has changed |
+| **Log in with a key** | One real login attempt, without asking for a password |
+
+Each problem is explained in plain words with the fix next to it: **Make the Key Private**,
+**Set Up SSH Key…**, **Add Key to Agent**, **Use Only This Host’s Key** (for "too many authentication
+failures"), **Forget the Old Host Key…** (after a warning about what a changed server key can mean), or
+**Edit Host**. After a fix the test runs again by itself.
+
+**Copy Report** puts the result on the clipboard as text, handy for a colleague or a support ticket.
+It contains host names and file paths, never keys or passwords.
+
+The test uses your own `ssh` program, makes one connection attempt, never asks for or stores a
+password, and changes nothing unless you press a fix button.
 
 ## Settings
 
