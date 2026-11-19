@@ -10,8 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://img.shields.io/visual-studio-marketplace/v/vrxt.ssh-config-manager?label=Marketplace&color=1f6feb" alt="Marketplace version"></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://img.shields.io/visual-studio-marketplace/i/vrxt.ssh-config-manager?color=1f6feb" alt="Installs"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://vsmarketplacebadges.dev/version-short/vrxt.ssh-config-manager.svg?label=Marketplace&color=1f6feb" alt="Marketplace version"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://vsmarketplacebadges.dev/installs-short/vrxt.ssh-config-manager.svg?color=1f6feb" alt="Installs"></a>
   <a href="https://github.com/VRXT/ssh-config-manager/actions/workflows/ci.yml"><img src="https://github.com/VRXT/ssh-config-manager/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license"></a>
 </p>
