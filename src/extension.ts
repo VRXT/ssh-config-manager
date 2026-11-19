@@ -18,7 +18,7 @@ import { describeFilter, emptyFilter } from './search';
 import { folderProblem, sshInFolder } from './remote';
 import { findRemoteProvider, suggestedProvider } from './remoteProvider';
 import { SearchViewProvider } from './searchView';
-import { DotStatus, Theme, canDraw, folderStatus, statusIconName, statusIconSvg } from './statusIcon';
+import { DotStatus, Theme, folderStatus, statusIconName, statusIconSvg } from './statusIcon';
 import { Store, collapseHome, expandHome } from './store';
 import { SyncController } from './syncController';
 import { COLORS, HostTree, ICONS, Node, autoIcon, hostDetail, hostSummary, isFav } from './tree';
@@ -127,37 +127,41 @@ export function activate(context: vscode.ExtensionContext): void {
     //   PROJECT
     //       sub-folder
     //           host
-    // VS Code does not color icons in a quick pick, so each row gets a drawn icon: the host's or
-    // folder's own icon in its color, with the same small status dot as in the Hosts panel.
+    const indent = (depth: number) => '  '.repeat(depth);
     const safe = (icon: string, fallback: string) => (/^[a-z0-9-]+$/.test(icon) ? icon : fallback);
-    const picture = (icon: string, color?: string, status?: DotStatus) =>
-      canDraw(icon) ? tree.statusIcon(icon, color, status) : new vscode.ThemeIcon(safe(icon, 'server'));
+    // A quick pick cannot color an icon or badge it, but it shows the glyphs of a color font: the
+    // extension's own icon font has every host icon in every color, with the status dot in its corner
+    // (scripts/build-icon-font.py). `$(sshm-server-blue-up)` is the blue server icon with a green dot.
     const statusOf = (h: Host) => (h.disabled ? undefined : health.get(connectName(h))?.status);
-    const row = (h: Host): HostItem => {
+    const glyph = (icon: string, color?: string, status?: DotStatus) => {
+      const c = color && COLORS[color] ? color : 'plain';
+      const s = status && status !== 'unknown' ? status : 'none';
+      return !ICONS.includes(icon) || (c === 'plain' && s === 'none') ? `$(${safe(icon, 'server')})` : `$(sshm-${icon}-${c}-${s})`;
+    };
+    const row = (h: Host, depth: number): HostItem => {
       const icon = h.attrs.icon || (doc.settings.autoicon === 'off' ? 'server' : autoIcon(h));
       const tags = hostTags(h).map(t => '#' + t).join(' ');
       return {
-        label: h.alias,
-        iconPath: picture(icon, h.attrs.color, statusOf(h)),
+        label: `${indent(depth)}${glyph(icon, h.attrs.color, statusOf(h))} ${h.alias}`,
         description: [hostSummary(h), tags].filter(Boolean).join('  '),
-        detail: h.attrs.note || undefined,
+        detail: h.attrs.note ? indent(depth) + h.attrs.note : undefined,
         h,
       };
     };
-    const header = (title: string, icon: string, hosts: Host[], color?: string): HostItem => {
+    const header = (title: string, icon: string, depth: number, hosts: Host[], color?: string): HostItem => {
       const down = hosts.filter(h => statusOf(h) === 'down').length;
       return {
-        label: title,
-        iconPath: picture(icon, color, folderStatus(hosts.map(statusOf))),
+        label: `${indent(depth)}${glyph(icon, color, folderStatus(hosts.map(statusOf)))} ${title}`,
         description: down ? `${hosts.length} · ${down} down` : String(hosts.length),
       };
     };
-    const line = () => out.length && out.push({ label: '', kind: vscode.QuickPickItemKind.Separator });
     const gap = () => {
-      if (out.length && spaced) {
-        out.push({ label: ' ', spacer: true }); // empty row = breathing room between projects
+      if (out.length) {
+        if (spaced) {
+          out.push({ label: ' ', spacer: true }); // empty row = breathing room between projects
+        }
+        out.push({ label: '', kind: vscode.QuickPickItemKind.Separator });
       }
-      line();
     };
     const block = (
       title: string,
@@ -173,11 +177,9 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
       gap();
-      out.push(header(title, icon, [...own, ...subs.flatMap(s => s.hosts)], color), ...own.map(row));
-      // a quick pick has no tree: a sub-folder is its own block, named with its parent
+      out.push(header(title, icon, 0, [...own, ...subs.flatMap(s => s.hosts)], color), ...own.map(h => row(h, 1)));
       for (const s of subs) {
-        line();
-        out.push(header(`${title} › ${s.title}`, s.icon, s.hosts, s.color), ...s.hosts.map(row));
+        out.push(header(s.title, s.icon, 1, s.hosts, s.color), ...s.hosts.map(h => row(h, 2)));
       }
     };
 
@@ -187,7 +189,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const loose = doc.rootHosts.filter(usable);
     if (loose.length) {
       gap();
-      out.push(...loose.map(row));
+      out.push(...loose.map(h => row(h, 0)));
     }
     for (const g of doc.groups) {
       const only = skipsSectionLevel(g); // one hand-written sub-folder holding everything: skip that level

@@ -136,18 +136,32 @@ test('the status icon: the host’s own icon and color with a dot, animated only
   // an icon without a known shape falls back to the server, and a 24-unit icon is scaled down
   assert.strictEqual(si.statusIconName('no-such-icon', 'pink', 'up', true, 'dark'), 'server-plain-up-a-dark.svg');
   assert.match(si.statusIconSvg('terminal', undefined, 'up', false, 'dark'), /scale\(0\.666/);
-  // without a status: the icon alone in its color, for the quick-connect list
-  const plain = si.statusIconSvg('database', 'green', undefined, true, 'dark');
-  assert.match(plain, /#89d185/);
-  assert.doesNotMatch(plain, /mask|circle|<style/);
-  assert.strictEqual(si.statusIconName('database', 'green', undefined, true, 'dark'), 'database-green-none-dark.svg');
-  assert.ok(si.canDraw('cloud') && !si.canDraw('references'));
   const tree = require('fs').readFileSync(require('path').join(__dirname, '../src/tree.ts'), 'utf8');
   const icons = /export const ICONS = \[([^\]]+)\]/.exec(tree)[1].match(/'[^']+'/g).map(x => x.slice(1, -1));
   const shapes = require('../out/iconShapes').ICON_SHAPES;
   for (const icon of [...icons, 'link']) {
     assert.ok(shapes[icon], 'shape for ' + icon);
   }
+});
+
+test('the icon font has a glyph for every icon, color and status the quick-connect list asks for', () => {
+  const pkg = require('../package.json');
+  const fs = require('fs'), path = require('path');
+  // out/tree needs vscode, so the lists are read from its source
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'tree.ts'), 'utf8');
+  const ICONS = src.match(/export const ICONS = \[([^\]]+)\]/)[1].match(/[a-z-]+/g);
+  const COLORS = Object.fromEntries(src.match(/export const COLORS[^{]*\{([^}]+)\}/)[1].match(/^\s*[a-z]+(?=:)/gm).map(c => [c.trim(), 1]));
+  assert.ok(ICONS.length > 20 && Object.keys(COLORS).length === 6);
+  for (const icon of ICONS) {
+    for (const color of ['plain', ...Object.keys(COLORS)]) {
+      for (const status of ['none', 'up', 'down', 'mixed']) {
+        if (color === 'plain' && status === 'none') continue;
+        const entry = pkg.contributes.icons[`sshm-${icon}-${color}-${status}`];
+        assert.ok(entry, `sshm-${icon}-${color}-${status}`);
+      }
+    }
+  }
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'media', 'sshm-icons.woff')));
 });
 
 test('a folder is green when all its hosts are up, red when all are down, yellow when mixed', () => {

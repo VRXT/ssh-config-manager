@@ -12,3 +12,4 @@ tsconfig.json
 .gitignore
 research_notes/
 reports/
+scripts/**

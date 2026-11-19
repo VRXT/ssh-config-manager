@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- **Quick connect** list: the big emoji dots are gone. Each row now shows the host's or folder's icon
-  in its own color with the same small status dot as the Hosts panel, and a sub-folder is its own
-  block named with its parent (`Project › Sub-folder`)
+- **Quick connect** list: the big emoji dots are gone. Each row keeps its place in the folder tree and
+  shows the host's or folder's icon in its own color, with the same small status dot as the Hosts
+  panel (drawn with the extension's own color icon font). Folders also count the hosts that are down
 
 ## 0.7.0
 
