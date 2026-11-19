@@ -27,6 +27,26 @@ function generalBlock(S) {
   ];
 }
 
+function statusBlock(S) {
+  const h = S.health;
+  const every = [0, 60, 300, 900].includes(h.interval) ? h.interval : null;
+  return [
+    el('div', { class: 'where' }, 'How to tell that a server is up'),
+    opts([
+      { v: 'ssh', t: 'SSH port', d: 'Up when something answers on the host’s SSH port. No login is made. Best for most servers.' },
+      { v: 'ping', t: 'Ping', d: 'Up when the host answers a ping. Many cloud servers block ping and would show as down.' },
+      { v: 'http', t: 'Web address', d: 'Up when https://<HostName>/ answers. For web servers.' },
+      { v: 'off', t: 'Off', d: 'No dots. Nothing is checked.' },
+    ], h.check, v => send('health', { key: 'check', value: v })),
+    card(
+      item('Check again', 'Only while the Hosts panel is visible.' + (every === null ? ' Now: every ' + h.interval + ' seconds.' : ''),
+        seg([{ v: '60', l: '1 min' }, { v: '300', l: '5 min' }, { v: '900', l: '15 min' }, { v: '0', l: 'Only on Refresh' }], every === null ? '' : String(every), v => send('health', { key: 'interval', value: Number(v) }), h.check === 'off')),
+      item('Check now', 'The Refresh button of the Hosts panel does the same.', btn('Check Now', () => send('command', { id: 'sshManager.checkHealth' }), 'ghost'))),
+    note('One host, another way', 'Right-click a host → Set Status Check… to give it its own check: SSH port, ping, a web address such as https://example.com/health, or none.', true),
+    el('p', { class: 'muted small gap-t' }, '🟢 up   🔴 down   ⚪ not checked. Hosts behind a jump host cannot be reached from this computer directly, so they stay ⚪ unless you give them a web address. For the reason a host is down, right-click it → Test Connection…'),
+  ];
+}
+
 function helpBlock(S) {
   return [
     card(
@@ -39,6 +59,7 @@ function helpBlock(S) {
 
 const SECTIONS = [
   { id: 'general', label: 'General', art: 'settings', title: 'General', lead: 'How the Hosts panel behaves.', body: generalBlock },
+  { id: 'status', label: 'Server status', art: 'settings', title: 'Server status', lead: 'A dot next to every host shows whether the server is up or down right now.', body: statusBlock },
   { id: 'folders', label: 'Folders', art: 'folders', title: 'Folders', lead: 'Keep hosts in folders and subfolders, the way you keep files.', body: foldersBlock },
   { id: 'picker', label: 'Remote-SSH list', art: 'picker', title: 'Remote-SSH list', lead: 'Make VS Code’s own “Connect to Host” list as organized as this panel.', body: pickerBlock },
   { id: 'backups', label: 'Backups', art: 'backup', title: 'Backups', lead: 'A copy of your config is saved before every change, in a folder right next to it. Restore any of them with one click.', body: S => backupsBlock(S, 12) },

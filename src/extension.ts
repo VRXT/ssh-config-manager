@@ -10,6 +10,8 @@ import {
 } from './sshConfig';
 import { ago } from './backups';
 import { DoctorPanels } from './doctorPanel';
+import { HEALTH_DOTS, HEALTH_METHODS, HealthMethod, normalizeCheck, urlProblem } from './health';
+import { HealthController } from './healthController';
 import { openHostEditor } from './hostEditor';
 import { Panels } from './panels';
 import { describeFilter, emptyFilter } from './search';
@@ -39,6 +41,16 @@ export function activate(context: vscode.ExtensionContext): void {
     canSelectMany: true,
     showCollapseAll: true,
   });
+
+  // up / down dots: checked while the Hosts panel is visible, and on Refresh
+  const health = new HealthController(store);
+  tree.health = alias => health.get(alias);
+  health.setVisible(view.visible);
+  context.subscriptions.push(
+    health,
+    health.onDidChange(() => tree.redraw()),
+    view.onDidChangeVisibility(e => health.setVisible(e.visible)),
+  );
 
   const search = new SearchViewProvider(store, tree);
   const sync = new SyncController(store, context.globalState);
@@ -102,12 +114,16 @@ export function activate(context: vscode.ExtensionContext): void {
     // Quick picks cannot color an icon (VS Code ignores ThemeIcon colors there), so a colored dot
     // next to the name stands in for the color the host or group has in the tree.
     const dot = (color?: string) => (color && COLOR_DOTS[color] ? COLOR_DOTS[color] + ' ' : '');
+    const statusDot = (h: Host) => {
+      const state = h.disabled ? undefined : health.get(connectName(h));
+      return state && state.status !== 'unknown' ? HEALTH_DOTS[state.status] + ' ' : '';
+    };
     const row = (h: Host, depth: number): HostItem => {
       const icon = h.attrs.icon || (doc.settings.autoicon === 'off' ? 'server' : autoIcon(h));
       const tags = hostTags(h).map(t => '#' + t).join(' ');
       return {
         label: `${indent(depth)}$(${safe(icon, 'server')}) ${dot(h.attrs.color)}${h.alias}`,
-        description: [hostSummary(h), tags].filter(Boolean).join('  '),
+        description: [statusDot(h) + hostSummary(h), tags].filter(Boolean).join('  '),
         detail: h.attrs.note ? indent(depth) + h.attrs.note : undefined,
         h,
       };
@@ -274,7 +290,78 @@ export function activate(context: vscode.ExtensionContext): void {
     );
   const regPlain = (id: string, fn: (...args: any[]) => unknown) => context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
-  reg('sshManager.refresh', () => store.reload());
+  reg('sshManager.refresh', () => {
+    store.reload();
+    void health.check();
+  });
+
+  // ---- server status: the up / down dot next to each host
+
+  const METHOD_NAMES: Record<HealthMethod, string> = { off: 'Off', ssh: 'SSH port', ping: 'Ping', http: 'Web address (HTTP)' };
+
+  reg('sshManager.checkHealth', async (node, selected) => {
+    const picked = (selected?.length ? selected : node ? [node] : []).filter(n => n.type === 'host').map(n => connectName((n as { host: Host }).host));
+    const only = picked.filter((a): a is string => !!a);
+    if (health.method === 'off' && !store.doc.hosts.some(h => normalizeCheck(h.attrs.check) && normalizeCheck(h.attrs.check) !== 'off')) {
+      const on = await vscode.window.showInformationMessage('Server status checks are off.', 'Turn On', 'Settings');
+      if (on === 'Turn On') {
+        await vscode.workspace.getConfiguration('sshManager').update('health.check', 'ssh', vscode.ConfigurationTarget.Global);
+      } else if (on === 'Settings') {
+        panels.showSettings('status');
+      }
+      return;
+    }
+    await vscode.window.withProgress({ location: { viewId: 'sshManager.hosts' } }, () => health.check(only.length ? only : undefined));
+  });
+
+  reg('sshManager.setHealthCheck', async (node, selected) => {
+    const nodes = (selected?.length ? selected : node ? [node] : []).filter(n => n.type === 'host' && !n.host.readonly && !n.host.isPattern);
+    const hosts = nodes.length ? nodes.map(n => (n as { host: Host }).host) : [await pickHost(undefined, true)].filter((h): h is Host => !!h && !h.readonly);
+    if (!hosts.length) {
+      return;
+    }
+    const current = hosts.length === 1 ? normalizeCheck(hosts[0].attrs.check) : '';
+    const mark = (v: string) => (hosts.length === 1 && (v === 'url' ? /^http/i.test(current) && current !== 'http' : current === v) ? '  $(check)' : '');
+    type Item = vscode.QuickPickItem & { v: string };
+    const items: Item[] = [
+      { v: '', label: 'Same as the other hosts' + mark(''), description: `now: ${METHOD_NAMES[health.method]}` },
+      { v: 'ssh', label: '$(plug) SSH port' + mark('ssh'), description: 'Up when something answers on the host’s SSH port. No login.' },
+      { v: 'ping', label: '$(broadcast) Ping' + mark('ping'), description: 'Up when the host answers a ping. Many cloud servers block ping.' },
+      { v: 'url', label: '$(globe) Web address…' + mark('url'), description: 'Up when a web page or health URL answers.' },
+      { v: 'off', label: '$(circle-slash) Do not check' + mark('off'), description: 'No dot for this host.' },
+    ];
+    const pick = await vscode.window.showQuickPick(items, {
+      title: hosts.length === 1 ? `Status check for ${hosts[0].alias}` : `Status check for ${hosts.length} hosts`,
+      placeHolder: 'How to tell whether the server is up',
+    });
+    if (!pick) {
+      return;
+    }
+    let value: string | undefined = pick.v || undefined;
+    if (pick.v === 'url') {
+      const first = hosts[0];
+      const typed = await vscode.window.showInputBox({
+        title: 'Web address to check',
+        prompt: 'The server counts as up when this address answers (any answer except a 5xx error).',
+        value: /^https?:/i.test(current) ? current : `https://${option(first, 'HostName') || first.alias}/`,
+        validateInput: v => urlProblem(v),
+      });
+      if (typed === undefined) {
+        return;
+      }
+      value = typed.trim();
+    }
+    await store.mutate(doc => {
+      let text = doc.lines.join(doc.eol) + doc.eol;
+      let d = doc;
+      for (const h of hosts) {
+        text = setHostAttrs(d, h.id, { check: value });
+        d = parse(text, doc.file);
+      }
+      return text;
+    });
+    void health.check(hosts.map(h => connectName(h)).filter((a): a is string => !!a));
+  });
 
   reg('sshManager.filter', () => search.focus());
 

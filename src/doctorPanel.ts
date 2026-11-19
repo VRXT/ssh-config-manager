@@ -10,7 +10,7 @@ import { Store } from './store';
 import { artUris, page, webviewOptions } from './ui';
 
 /** The real world behind the doctor's checks: the system's ssh tools, DNS and a TCP connection. */
-function realDeps(): DoctorDeps {
+export function realDeps(): DoctorDeps {
   return {
     platform: process.platform,
     home: os.homedir(),

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Server status**: a dot next to every host shows whether the server is up (🟢) or down (🔴), and
+  folders count the hosts that are down. Check by SSH port (default, no login), ping, or a web
+  address; set it for all hosts in **Settings → Server status** or per host with **Set Status
+  Check…**. **Refresh** checks again, and checks repeat every 5 minutes while the panel is visible.
+  Turn it off with `sshManager.health.check: off`
 - **Test Connection…** on any host: a checklist of the steps `ssh` takes (config, name lookup, port,
   key file, agent, server identity, login) that shows which one fails, why, and the fix next to it:
   make the key private, set up a key, add it to the agent, use only this key, forget a changed

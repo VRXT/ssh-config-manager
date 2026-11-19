@@ -2,6 +2,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { ago } from './backups';
+import { HEALTH_METHODS, intervalSeconds } from './health';
 import { missingKeys } from './keys';
 import { SHORTCUTS, keyCaps } from './shortcuts';
 import { pickerFormatting, setPickerFormatting, setSettings } from './sshConfig';
@@ -40,7 +41,7 @@ export class Panels implements vscode.Disposable {
     );
   }
 
-  /** Opens the settings page, optionally at a section (general, folders, picker, backups, sync, keys, shortcuts, help). */
+  /** Opens the settings page, optionally at a section (general, status, folders, picker, backups, sync, keys, shortcuts, help). */
   showSettings(section?: string): void {
     if (!this.settingsPanel) {
       this.settingsPanel = this.create('sshManager.settingsPage', 'SSH Manager Settings', ['components.js', 'settings.js']);
@@ -132,6 +133,10 @@ export class Panels implements vscode.Disposable {
       },
       sync: { ...status, lastAgo: status.last ? ago(new Date(status.last), now) : '', modes: SYNC_MODES },
       keys: { withKeys: doc.hosts.filter(h => !h.disabled && h.options.some(o => o.key.toLowerCase() === 'identityfile')).length, missing: [...missing.values()] },
+      health: {
+        check: vscode.workspace.getConfiguration('sshManager').get<string>('health.check') ?? 'ssh',
+        interval: intervalSeconds(vscode.workspace.getConfiguration('sshManager').get('health.interval') ?? 300),
+      },
       shortcuts: SHORTCUTS.map(s => ({ label: s.label, caps: keyCaps(s, process.platform), where: s.where, group: s.group })),
     };
   }
@@ -158,6 +163,14 @@ export class Panels implements vscode.Disposable {
         const n = Math.floor(Number(msg.value));
         if (n >= 1 && n <= 500) {
           await cfg.update('backup.keep', n, vscode.ConfigurationTarget.Global);
+        }
+        return;
+      }
+      case 'health': {
+        if (msg.key === 'check' && (HEALTH_METHODS as readonly string[]).includes(String(msg.value))) {
+          await cfg.update('health.check', String(msg.value), vscode.ConfigurationTarget.Global);
+        } else if (msg.key === 'interval' && [0, 60, 300, 900].includes(Number(msg.value))) {
+          await cfg.update('health.interval', Number(msg.value), vscode.ConfigurationTarget.Global);
         }
         return;
       }

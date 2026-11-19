@@ -30,6 +30,7 @@ OpenSSH ignores, so `ssh`, Remote-SSH and every other tool keep working exactly 
 - **Backups** next to the config file before every change, with one-click restore
 - **Sync** between your computers through a file in Dropbox, iCloud Drive or OneDrive
 - **SSH key help**: see which hosts need a key that is not on this computer, and set one up in one step
+- **Server status**: a green or red dot next to every host shows whether the server is up right now
 - **Test Connection**: when a host will not connect, a checklist shows which step fails and how to fix it
 - **Keyboard shortcuts** for almost everything, shown in the menus
 - **A setup wizard** on first run and a **settings page** you can open any time
@@ -166,6 +167,36 @@ Right-click a host → **Set Up SSH Key…** to fix it in one step:
 
 It goes through `ssh <host>`, so `User`, `Port`, `ProxyJump` and the rest of the config apply, and it
 always runs on your computer, also from a window that is connected to a remote.
+
+## Server status: up or down
+
+<img src="images/status.png" width="320" align="right" alt="Hosts with green, red and grey status dots, and folders that count the hosts that are down">
+
+A small dot next to every host shows whether the server answers right now: 🟢 up, 🔴 down,
+⚪ not checked. A folder shows how many of its hosts are down, and the tooltip of a host tells how
+it was checked, how long the answer took and when.
+
+Choose how to check in **Settings → Server status**:
+
+| Check | A server is up when… | Good to know |
+|---|---|---|
+| **SSH port** (default) | something answers on the host's SSH port | No login is made. Works for almost every server. |
+| **Ping** | the host answers a ping | Many cloud servers block ping and would show as down. |
+| **Web address** | `https://<HostName>/` answers | Any answer except a 5xx error counts as up. |
+| **Off** | | No dots, nothing is checked. |
+
+- **One host, another way**: right-click a host → **Set Status Check…** to give it its own check,
+  for example a health URL such as `https://example.com/health`, or no check at all
+- **Refresh** in the Hosts panel checks everything again; right-click a host → **Check Server Status
+  Now** checks just that one
+- Checks repeat every 5 minutes (1 min, 15 min, or only on Refresh), and only while the Hosts panel
+  is visible
+- Hosts behind a jump host (`ProxyJump`) cannot be reached from your computer directly, so they stay
+  ⚪ unless you give them a web address
+
+A red dot says *that* a server is down. For *why*, use **Test Connection…** below.
+
+<br clear="right">
 
 ## When a host will not connect
 

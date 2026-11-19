@@ -125,6 +125,30 @@
           "default": "",
           "scope": "machine",
           "description": "The shared config file in a synced folder (Dropbox, iCloud Drive, OneDrive, …). SSH keys are never synced."
+        },
+        "sshManager.health.check": {
+          "type": "string",
+          "enum": [
+            "off",
+            "ssh",
+            "ping",
+            "http"
+          ],
+          "default": "ssh",
+          "enumDescriptions": [
+            "No status dots.",
+            "Up when something answers on the host's SSH port. No login is made.",
+            "Up when the host answers a ping. Many cloud servers block ping.",
+            "Up when https://<HostName>/ answers."
+          ],
+          "markdownDescription": "How to tell whether a server is up, shown as a dot next to each host. A host can have its own choice: right-click it → **Set Status Check…**. Hosts behind a jump host are not checked."
+        },
+        "sshManager.health.interval": {
+          "type": "number",
+          "default": 300,
+          "minimum": 0,
+          "maximum": 86400,
+          "markdownDescription": "Seconds between status checks while the Hosts panel is visible. `0` checks only when you press **Refresh**."
         }
       }
     },
@@ -491,6 +515,17 @@
         "title": "Check SSH Keys on This Computer",
         "category": "SSH Manager",
         "icon": "$(key)"
+      },
+      {
+        "command": "sshManager.checkHealth",
+        "title": "Check Server Status Now",
+        "category": "SSH Manager",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "sshManager.setHealthCheck",
+        "title": "Set Status Check…",
+        "category": "SSH Manager"
       }
     ],
     "menus": {
@@ -635,6 +670,11 @@
           "command": "sshManager.wizard",
           "when": "view == sshManager.hosts",
           "group": "3_help@2"
+        },
+        {
+          "command": "sshManager.checkHealth",
+          "when": "view == sshManager.hosts",
+          "group": "2_data@5"
         }
       ],
       "view/item/context": [
@@ -722,6 +762,16 @@
           "command": "sshManager.testConnection",
           "when": "view == sshManager.hosts && viewItem =~ /^host/",
           "group": "1_connect@5"
+        },
+        {
+          "command": "sshManager.checkHealth",
+          "when": "view == sshManager.hosts && viewItem =~ /^host/",
+          "group": "1_connect@6"
+        },
+        {
+          "command": "sshManager.setHealthCheck",
+          "when": "view == sshManager.hosts && viewItem == host",
+          "group": "1_connect@7"
         },
         {
           "command": "sshManager.setupKey",
@@ -905,7 +955,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js && node test/doctor.test.js",
+    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js && node test/doctor.test.js && node test/health.test.js",
     "vscode:prepublish": "npm run compile",
     "package": "vsce package",
     "publish": "vsce publish",

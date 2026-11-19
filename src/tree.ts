@@ -1,6 +1,7 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { HEALTH_DOTS, HealthResult, describeHealth } from './health';
 import { missingKeys } from './keys';
 import { Container, Doc, Host, connectName, containerPath, findContainer, hostTags, isDisabled, moveGroup, skipsSectionLevel, moveHost, moveSection, option, parse, providerOf } from './sshConfig';
 import { HostFilter, emptyFilter, hostMatches, isFilterEmpty } from './search';
@@ -84,6 +85,19 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
 
   /** ids of hosts whose SSH key is not on this computer */
   private missing = new Set<string>();
+
+  /** up / down state of a host by its connect name, when status checks are running */
+  health: (alias: string | undefined) => HealthResult | undefined = () => undefined;
+
+  /** Redraws the list, for state that lives outside the config file (server status). */
+  redraw(): void {
+    this.changed.fire();
+  }
+
+  private downIn(c: Container): number {
+    const hosts = c.kind === 'group' ? [...c.hosts, ...c.sections.flatMap(s => s.hosts)] : c.hosts;
+    return hosts.filter(h => !h.disabled && this.health(connectName(h))?.status === 'down').length;
+  }
 
   constructor(private readonly store: Store) {
     const refresh = () => {
@@ -195,7 +209,8 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
       const item = new vscode.TreeItem(c.title, expanded);
       item.id = `c|${c.id}|${c.title}${this.idSuffix}`;
       const offGroup = isDisabled(c);
-      item.description = offGroup ? `${count} · disabled` : String(count);
+      const down = offGroup ? 0 : this.downIn(c);
+      item.description = offGroup ? `${count} · disabled` : down ? `${count} · ${HEALTH_DOTS.down} ${down} down` : String(count);
       const groupIcon = c.attrs.icon || 'folder'; // folders and subfolders look alike, as in a file explorer
       item.iconPath = offGroup ? new vscode.ThemeIcon(/^[a-z0-9-]+$/.test(groupIcon) ? groupIcon : 'folder', OFF_COLOR) : themeIcon(groupIcon, c.attrs.color);
       item.contextValue = c.kind;
@@ -208,7 +223,9 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
     const tags = hostTags(h).map(t => '#' + t).join(' ');
     const fav = isFav(h) && !node.fav ? '★ ' : '';
     const noKey = this.missing.has(h.id);
-    item.description = [fav + hostSummary(h), tags, noKey ? '\u26a0 key not on this computer' : ''].filter(Boolean).join('  ');
+    const health = h.disabled ? undefined : this.health(connectName(h));
+    const dot = health ? HEALTH_DOTS[health.status] + ' ' : '';
+    item.description = [dot + fav + hostSummary(h), tags, noKey ? '\u26a0 key not on this computer' : ''].filter(Boolean).join('  ');
     const icon = h.attrs.icon || (settings.autoicon === 'off' ? 'server' : autoIcon(h));
     item.iconPath = themeIcon(icon, h.attrs.color);
     if (h.disabled) {
@@ -216,7 +233,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
       item.iconPath = new vscode.ThemeIcon('circle-slash', OFF_COLOR);
     }
     item.contextValue = h.isPattern ? 'pattern' : h.readonly ? 'hostReadonly' : 'host';
-    item.tooltip = tooltip(h, noKey);
+    item.tooltip = tooltip(h, noKey, health);
     const click = settings.click;
     if (click && click !== 'none' && connectName(h)) {
       item.command = { command: 'sshManager.connect', title: 'Connect', arguments: [node] };
@@ -303,7 +320,7 @@ export function isFav(h: Host): boolean {
   return !!h.attrs.fav && h.attrs.fav !== '0' && !h.readonly && !h.disabled;
 }
 
-function tooltip(h: Host, noKey = false): vscode.MarkdownString {
+function tooltip(h: Host, noKey = false, health?: HealthResult): vscode.MarkdownString {
   const md = new vscode.MarkdownString();
   md.appendMarkdown(`**${esc(h.alias)}**`);
   const detail = hostDetail(h);
@@ -315,6 +332,9 @@ function tooltip(h: Host, noKey = false): vscode.MarkdownString {
     md.appendMarkdown(`${esc(h.attrs.note)}\n\n`);
   }
   const rows: [string, string][] = [];
+  if (health) {
+    rows.push([`${HEALTH_DOTS[health.status]} Status`, describeHealth(health, Date.now())]);
+  }
   const group = containerPath(h.container);
   if (group) {
     rows.push(['Group', group]);
