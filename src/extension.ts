@@ -18,6 +18,7 @@ import { describeFilter, emptyFilter } from './search';
 import { folderProblem, sshInFolder } from './remote';
 import { findRemoteProvider, suggestedProvider } from './remoteProvider';
 import { SearchViewProvider } from './searchView';
+import { Theme, statusIconName, statusIconSvg } from './statusIcon';
 import { Store, collapseHome, expandHome } from './store';
 import { SyncController } from './syncController';
 import { COLORS, COLOR_DOTS, HostTree, ICONS, Node, autoIcon, hostDetail, hostSummary, isFav } from './tree';
@@ -45,11 +46,28 @@ export function activate(context: vscode.ExtensionContext): void {
   // up / down dots: checked while the Hosts panel is visible, and on Refresh
   const health = new HealthController(store);
   tree.health = alias => health.get(alias);
+  // the dot is drawn onto the host's icon, handed to VS Code as an inline image
+  const statusIcons = new Map<string, vscode.Uri>();
+  tree.statusIcon = (icon, color, state) => {
+    const animate = vscode.workspace.getConfiguration('sshManager').get<boolean>('health.animation') !== false;
+    const one = (theme: Theme) => {
+      const name = statusIconName(icon, color, state, animate, theme);
+      let uri = statusIcons.get(name);
+      if (!uri) {
+        const svg = statusIconSvg(icon, color, state, animate, theme);
+        uri = vscode.Uri.parse('data:image/svg+xml;base64,' + Buffer.from(svg, 'utf8').toString('base64'));
+        statusIcons.set(name, uri);
+      }
+      return uri;
+    };
+    return { light: one('light'), dark: one('dark') };
+  };
   health.setVisible(view.visible);
   context.subscriptions.push(
     health,
     health.onDidChange(() => tree.redraw()),
     view.onDidChangeVisibility(e => health.setVisible(e.visible)),
+    vscode.workspace.onDidChangeConfiguration(e => e.affectsConfiguration('sshManager.health.animation') && tree.redraw()),
   );
 
   const search = new SearchViewProvider(store, tree);

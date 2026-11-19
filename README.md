@@ -30,7 +30,7 @@ OpenSSH ignores, so `ssh`, Remote-SSH and every other tool keep working exactly 
 - **Backups** next to the config file before every change, with one-click restore
 - **Sync** between your computers through a file in Dropbox, iCloud Drive or OneDrive
 - **SSH key help**: see which hosts need a key that is not on this computer, and set one up in one step
-- **Server status**: a green or red dot next to every host shows whether the server is up right now
+- **Server status**: a small green or red dot on every host's icon shows whether the server is up right now
 - **Test Connection**: when a host will not connect, a checklist shows which step fails and how to fix it
 - **Keyboard shortcuts** for almost everything, shown in the menus
 - **A setup wizard** on first run and a **settings page** you can open any time
@@ -170,10 +170,11 @@ always runs on your computer, also from a window that is connected to a remote.
 
 ## Server status: up or down
 
-<img src="images/status.png" width="320" align="right" alt="Hosts with green, red and grey status dots, and folders that count the hosts that are down">
+<img src="images/status.png" width="320" align="right" alt="Host icons with a small green, red or grey status dot, and folders that count the hosts that are down">
 
-A small dot next to every host shows whether the server answers right now: 🟢 up, 🔴 down,
-⚪ not checked. A folder shows how many of its hosts are down, and the tooltip of a host tells how
+A small dot on every host's icon shows whether the server answers right now: green = up,
+red = down, a grey ring = not checked. The green dot pulses softly and the red one blinks (switch
+the animation off in the settings if you prefer a still dot). A folder shows how many of its hosts are down, and the tooltip of a host tells how
 it was checked, how long the answer took and when.
 
 Choose how to check in **Settings → Server status**:
@@ -192,7 +193,7 @@ Choose how to check in **Settings → Server status**:
 - Checks repeat every 5 minutes (1 min, 15 min, or only on Refresh), and only while the Hosts panel
   is visible
 - Hosts behind a jump host (`ProxyJump`) cannot be reached from your computer directly, so they stay
-  ⚪ unless you give them a web address
+  grey unless you give them a web address
 
 A red dot says *that* a server is down. For *why*, use **Test Connection…** below.
 
@@ -352,3 +353,7 @@ Issues and pull requests are welcome at
 ## License
 
 [MIT](LICENSE) © Mushari Alshqar
+
+The host icons with a status dot are drawn from the shapes of
+[Codicons](https://github.com/microsoft/vscode-codicons) © Microsoft Corporation, licensed
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

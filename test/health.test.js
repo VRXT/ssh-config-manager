@@ -122,6 +122,28 @@ test('check= is kept in the #@host line and survives an edit of the host', () =>
   assert.strictEqual(cleared.hosts[0].attrs.check, undefined);
 });
 
+test('the status icon: the host’s own icon and color with a dot, animated only when asked', () => {
+  const si = require('../out/statusIcon');
+  const up = si.statusIconSvg('database', 'green', 'up', true, 'dark');
+  assert.match(up, /^<svg [^>]*viewBox="0 0 16 16"/);
+  assert.match(up, /#89d185/, 'the host color');
+  assert.match(up, /#3fb950/, 'the green dot');
+  assert.match(up, /animation:/);
+  assert.match(up, /prefers-reduced-motion/);
+  assert.doesNotMatch(si.statusIconSvg('database', 'green', 'up', false, 'dark'), /animation|<style/);
+  assert.doesNotMatch(si.statusIconSvg('server', undefined, 'unknown', true, 'light'), /animation/);
+  assert.match(si.statusIconSvg('server', undefined, 'down', true, 'light'), /#cf222e/);
+  // an icon without a known shape falls back to the server, and a 24-unit icon is scaled down
+  assert.strictEqual(si.statusIconName('no-such-icon', 'pink', 'up', true, 'dark'), 'server-plain-up-a-dark.svg');
+  assert.match(si.statusIconSvg('terminal', undefined, 'up', false, 'dark'), /scale\(0\.666/);
+  const tree = require('fs').readFileSync(require('path').join(__dirname, '../src/tree.ts'), 'utf8');
+  const icons = /export const ICONS = \[([^\]]+)\]/.exec(tree)[1].match(/'[^']+'/g).map(x => x.slice(1, -1));
+  const shapes = require('../out/iconShapes').ICON_SHAPES;
+  for (const icon of [...icons, 'link']) {
+    assert.ok(shapes[icon], 'shape for ' + icon);
+  }
+});
+
 (async () => {
   let n = 0;
   for (const [name, fn] of tests) {

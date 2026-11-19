@@ -1,7 +1,7 @@
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { HEALTH_DOTS, HealthResult, describeHealth } from './health';
+import { HEALTH_DOTS, HealthResult, HealthStatus, describeHealth } from './health';
 import { missingKeys } from './keys';
 import { Container, Doc, Host, connectName, containerPath, findContainer, hostTags, isDisabled, moveGroup, skipsSectionLevel, moveHost, moveSection, option, parse, providerOf } from './sshConfig';
 import { HostFilter, emptyFilter, hostMatches, isFilterEmpty } from './search';
@@ -88,6 +88,9 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
 
   /** up / down state of a host by its connect name, when status checks are running */
   health: (alias: string | undefined) => HealthResult | undefined = () => undefined;
+
+  /** the host's icon with a small status dot drawn on it; undefined = keep the plain icon */
+  statusIcon: (icon: string, color: string | undefined, status: HealthStatus) => { light: vscode.Uri; dark: vscode.Uri } | undefined = () => undefined;
 
   /** Redraws the list, for state that lives outside the config file (server status). */
   redraw(): void {
@@ -210,7 +213,7 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
       item.id = `c|${c.id}|${c.title}${this.idSuffix}`;
       const offGroup = isDisabled(c);
       const down = offGroup ? 0 : this.downIn(c);
-      item.description = offGroup ? `${count} · disabled` : down ? `${count} · ${HEALTH_DOTS.down} ${down} down` : String(count);
+      item.description = offGroup ? `${count} · disabled` : down ? `${count} · ${down} down` : String(count);
       const groupIcon = c.attrs.icon || 'folder'; // folders and subfolders look alike, as in a file explorer
       item.iconPath = offGroup ? new vscode.ThemeIcon(/^[a-z0-9-]+$/.test(groupIcon) ? groupIcon : 'folder', OFF_COLOR) : themeIcon(groupIcon, c.attrs.color);
       item.contextValue = c.kind;
@@ -224,10 +227,9 @@ export class HostTree implements vscode.TreeDataProvider<Node>, vscode.TreeDragA
     const fav = isFav(h) && !node.fav ? '★ ' : '';
     const noKey = this.missing.has(h.id);
     const health = h.disabled ? undefined : this.health(connectName(h));
-    const dot = health ? HEALTH_DOTS[health.status] + ' ' : '';
-    item.description = [dot + fav + hostSummary(h), tags, noKey ? '\u26a0 key not on this computer' : ''].filter(Boolean).join('  ');
+    item.description = [fav + hostSummary(h), tags, noKey ? '\u26a0 key not on this computer' : ''].filter(Boolean).join('  ');
     const icon = h.attrs.icon || (settings.autoicon === 'off' ? 'server' : autoIcon(h));
-    item.iconPath = themeIcon(icon, h.attrs.color);
+    item.iconPath = (health && this.statusIcon(icon, h.attrs.color, health.status)) || themeIcon(icon, h.attrs.color);
     if (h.disabled) {
       item.description = ['disabled', item.description].filter(Boolean).join('  ');
       item.iconPath = new vscode.ThemeIcon('circle-slash', OFF_COLOR);

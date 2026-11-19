@@ -135,6 +135,7 @@ export class Panels implements vscode.Disposable {
       keys: { withKeys: doc.hosts.filter(h => !h.disabled && h.options.some(o => o.key.toLowerCase() === 'identityfile')).length, missing: [...missing.values()] },
       health: {
         check: vscode.workspace.getConfiguration('sshManager').get<string>('health.check') ?? 'ssh',
+        animation: vscode.workspace.getConfiguration('sshManager').get<boolean>('health.animation') !== false,
         interval: intervalSeconds(vscode.workspace.getConfiguration('sshManager').get('health.interval') ?? 300),
       },
       shortcuts: SHORTCUTS.map(s => ({ label: s.label, caps: keyCaps(s, process.platform), where: s.where, group: s.group })),
@@ -169,6 +170,8 @@ export class Panels implements vscode.Disposable {
       case 'health': {
         if (msg.key === 'check' && (HEALTH_METHODS as readonly string[]).includes(String(msg.value))) {
           await cfg.update('health.check', String(msg.value), vscode.ConfigurationTarget.Global);
+        } else if (msg.key === 'animation') {
+          await cfg.update('health.animation', !!msg.value, vscode.ConfigurationTarget.Global);
         } else if (msg.key === 'interval' && [0, 60, 300, 900].includes(Number(msg.value))) {
           await cfg.update('health.interval', Number(msg.value), vscode.ConfigurationTarget.Global);
         }

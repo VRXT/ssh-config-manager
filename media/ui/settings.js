@@ -41,9 +41,10 @@ function statusBlock(S) {
     card(
       item('Check again', 'Only while the Hosts panel is visible.' + (every === null ? ' Now: every ' + h.interval + ' seconds.' : ''),
         seg([{ v: '60', l: '1 min' }, { v: '300', l: '5 min' }, { v: '900', l: '15 min' }, { v: '0', l: 'Only on Refresh' }], every === null ? '' : String(every), v => send('health', { key: 'interval', value: Number(v) }), h.check === 'off')),
+      item('Animate the dot', 'A soft pulse while a server is up, a slow blink while it is down.', toggle(h.animation, v => send('health', { key: 'animation', value: v }), 'Animate the dot', h.check === 'off')),
       item('Check now', 'The Refresh button of the Hosts panel does the same.', btn('Check Now', () => send('command', { id: 'sshManager.checkHealth' }), 'ghost'))),
     note('One host, another way', 'Right-click a host → Set Status Check… to give it its own check: SSH port, ping, a web address such as https://example.com/health, or none.', true),
-    el('p', { class: 'muted small gap-t' }, '🟢 up   🔴 down   ⚪ not checked. Hosts behind a jump host cannot be reached from this computer directly, so they stay ⚪ unless you give them a web address. For the reason a host is down, right-click it → Test Connection…'),
+    el('p', { class: 'muted small gap-t' }, 'Green = up, red = down, a grey ring = not checked. Hosts behind a jump host cannot be reached from this computer directly, so they stay grey unless you give them a web address. For the reason a host is down, right-click it → Test Connection…'),
   ];
 }
 

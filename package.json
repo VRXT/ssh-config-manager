@@ -149,6 +149,11 @@
           "minimum": 0,
           "maximum": 86400,
           "markdownDescription": "Seconds between status checks while the Hosts panel is visible. `0` checks only when you press **Refresh**."
+        },
+        "sshManager.health.animation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Animate the status dot: a soft pulse while a server is up, a slow blink while it is down."
         }
       }
     },
