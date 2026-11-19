@@ -13,6 +13,7 @@ import { openHostEditor } from './hostEditor';
 import { Panels } from './panels';
 import { describeFilter, emptyFilter } from './search';
 import { folderProblem, sshInFolder } from './remote';
+import { findRemoteProvider, suggestedProvider } from './remoteProvider';
 import { SearchViewProvider } from './searchView';
 import { Store, collapseHome, expandHome } from './store';
 import { SyncController } from './syncController';
@@ -233,12 +234,17 @@ export function activate(context: vscode.ExtensionContext): void {
     if (!name) {
       return;
     }
-    if (!vscode.extensions.getExtension('ms-vscode-remote.remote-ssh')) {
+    // Microsoft's Remote - SSH in VS Code, Cursor's own in Cursor, Open Remote - SSH in VSCodium and others
+    if (!findRemoteProvider(vscode.extensions.all)) {
+      const wanted = suggestedProvider(vscode.env.appName);
+      const install = `Find "${wanted.name}"`;
       const pick = await vscode.window.showWarningMessage(
-        'Opening a remote window needs the "Remote - SSH" extension.',
-        'Connect in Terminal',
+        `Opening a remote window needs an extension that connects over SSH. In ${vscode.env.appName} that is "${wanted.name}".`,
+        install, 'Connect in Terminal',
       );
-      if (pick) {
+      if (pick === install) {
+        await vscode.commands.executeCommand('workbench.extensions.search', wanted.id);
+      } else if (pick) {
         connectTerminal(h);
       }
       return;

@@ -10,6 +10,7 @@ const y = require('../out/sync');
 const k = require('../out/keys');
 const sc = require('../out/shortcuts');
 const pv = require('../out/preview');
+const rp = require('../out/remoteProvider');
 const pkg = require('../package.json');
 
 let n = 0;
@@ -259,6 +260,26 @@ Host nokey
   } finally {
     fs.rmSync(home, { recursive: true, force: true });
   }
+});
+
+test('remote windows: any editor\'s SSH extension counts, and the right one is suggested', () => {
+  const ext = (id, events) => ({ id, packageJSON: { activationEvents: events } });
+  assert.strictEqual(rp.findRemoteProvider([]), undefined);
+  assert.strictEqual(rp.findRemoteProvider([ext('vrxt.ssh-config-manager', ['onStartupFinished'])]), undefined, 'this extension itself is not one');
+  assert.strictEqual(rp.findRemoteProvider([ext('ms-vscode-remote.remote-ssh')]).name, 'Remote - SSH');
+  assert.strictEqual(rp.findRemoteProvider([ext('anysphere.remote-ssh')]).name, 'Remote - SSH (Cursor)');
+  assert.strictEqual(rp.findRemoteProvider([ext('Jeanp413.Open-Remote-SSH')]).id, 'jeanp413.open-remote-ssh', 'ids are compared without case');
+  assert.deepStrictEqual(
+    rp.findRemoteProvider([ext('some.other'), ext('acme.fork-remote-ssh', ['onCommand:x', 'onResolveRemoteAuthority:ssh-remote'])]),
+    { id: 'acme.fork-remote-ssh', name: 'acme.fork-remote-ssh' },
+    'an unknown build is recognized by what it resolves',
+  );
+  assert.strictEqual(rp.findRemoteProvider([{ id: 'broken.one' }, ext('x.y', 'not-an-array')]), undefined, 'odd manifests do not throw');
+  assert.strictEqual(rp.suggestedProvider('Visual Studio Code').id, 'ms-vscode-remote.remote-ssh');
+  assert.strictEqual(rp.suggestedProvider('Visual Studio Code - Insiders').id, 'ms-vscode-remote.remote-ssh');
+  assert.strictEqual(rp.suggestedProvider('Cursor').id, 'anysphere.remote-ssh');
+  assert.strictEqual(rp.suggestedProvider('VSCodium').id, 'jeanp413.open-remote-ssh');
+  assert.strictEqual(rp.suggestedProvider('Windsurf').id, 'jeanp413.open-remote-ssh');
 });
 
 test('keyboard shortcuts: package.json matches the list, and every shortcut has a real command', () => {

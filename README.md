@@ -90,6 +90,11 @@ elsewhere, or the **SSH** button in the status bar).
 
 ![Quick connect picker grouped by folder](images/quick-connect.png)
 
+**Not only in Microsoft's VS Code.** Opening a host in a window uses whichever SSH extension your
+editor has: *Remote - SSH* in VS Code, Cursor's own in Cursor, *Open Remote - SSH* in VSCodium and
+other builds. If none is installed, you are told which one to get. Connecting in a terminal needs
+nothing extra.
+
 **Open a folder directly.** Give a host a *remote folder* such as `/var/www/html` (in the edit form, or
 right-click → **Set Remote Folder…**). **Open in Window** then opens that folder on the server instead
 of an empty window, and **Connect in Terminal** starts the shell there.

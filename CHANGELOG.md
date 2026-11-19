@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.2
+
+- **Works in Cursor, VSCodium and other VS Code builds.** Opening a host in a window no longer
+  requires Microsoft's Remote - SSH: Cursor's own SSH extension and Open Remote - SSH are used when
+  they are the one installed. If none is, the message names the right one for the editor you are in
+- The release workflow can also publish to **Open VSX**, the extension store of those editors
+
+## 0.6.1
+
+- README: working Marketplace badges, and the Windows / Linux shortcuts listed first
+
 ## 0.6.0
 
 **New**

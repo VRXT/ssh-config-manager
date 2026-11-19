@@ -6,6 +6,7 @@ name: Release
 #
 # It builds the .vsix, attaches it to a GitHub Release, and publishes it to the
 # VS Code Marketplace with trusted publishing (OIDC) — no token or secret needed.
+# With the OVSX_PAT secret set it also publishes the same .vsix to Open VSX.
 # The Marketplace policy for publisher VRXT must name: repository VRXT/ssh-config-manager,
 # workflow release.yml, environment production.
 on:
@@ -52,3 +53,16 @@ jobs:
 
       - name: Publish to VS Code Marketplace (trusted publishing)
         run: npx vsce publish --oidc --packagePath ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
+
+      # Open VSX is the extension store of Cursor, VSCodium, Windsurf and other VS Code builds.
+      # Runs when the OVSX_PAT repository secret is set (a token from open-vsx.org); skipped otherwise.
+      - name: Publish to Open VSX
+        if: ${{ !cancelled() }}
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "$OVSX_PAT" ]; then
+            echo "OVSX_PAT secret not set; skipping Open VSX."
+            exit 0
+          fi
+          npx ovsx publish --skip-duplicate --packagePath ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
