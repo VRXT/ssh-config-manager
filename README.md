@@ -170,7 +170,7 @@ always runs on your computer, also from a window that is connected to a remote.
 
 ## Server status: up or down
 
-<img src="images/status.png" width="320" align="right" alt="Host icons with a small green, red or grey status dot, and folders that count the hosts that are down">
+<img src="images/status.png" width="320" align="right" alt="Host and folder icons with a small status dot: green for up, red for down, yellow for a folder with both">
 
 A small dot on every host's icon shows whether the server answers right now: green = up,
 red = down, a grey ring = not checked. The green dot pulses softly and the red one blinks (switch
