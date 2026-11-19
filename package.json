@@ -2,7 +2,7 @@
   "name": "ssh-config-manager",
   "displayName": "SSH Config Manager",
   "description": "SSH manager for VS Code: organize your ssh_config in a side bar with groups, icons, colors, tags, notes and favorites, stored as comments inside the config file itself. Connect in a terminal or via Remote-SSH.",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "publisher": "vrxt",
   "author": {
     "name": "Mushari Alshqar"
