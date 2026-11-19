@@ -179,27 +179,31 @@ file to your other computers. A few belong to the computer and live in VS Code's
 
 ## Keyboard shortcuts
 
+The same shortcuts work on **Windows, Linux and macOS**: `Ctrl` on Windows and Linux, `⌘` on a Mac.
 Click the Hosts list once, then:
 
-| macOS | Windows / Linux | Action |
+| Windows / Linux | macOS | Action |
 |---|---|---|
-| `⌘⌥S` | `Ctrl+Alt+S` | Connect to a host **from anywhere** |
-| `↩` | `Enter` | Connect to the selected host |
-| `⌘↩` | `Ctrl+Enter` | Open in a new window (Remote-SSH) |
-| `⌥↩` | `Alt+Enter` | Connect in a terminal |
-| `⌘C` | `Ctrl+C` | Copy the ssh command |
-| `⌘N` | `Ctrl+N` | New host |
-| `⌘⇧N` | `Ctrl+Shift+N` | New folder |
+| `Ctrl+Alt+S` | `⌘⌥S` | Connect to a host **from anywhere** |
+| `Enter` | `↩` | Connect to the selected host |
+| `Ctrl+Enter` | `⌘↩` | Open in a new window (Remote-SSH) |
+| `Alt+Enter` | `⌥↩` | Connect in a terminal |
+| `Ctrl+C` | `⌘C` | Copy the ssh command |
+| `Ctrl+N` | `⌘N` | New host |
+| `Ctrl+Shift+N` | `⌘⇧N` | New folder |
 | `F2` | `F2` | Edit the selected host / rename the selected folder |
-| `⌘⇧D` | `Ctrl+Shift+D` | Duplicate the selected host |
-| `⌘D` | `Ctrl+D` | Add to / remove from favorites |
-| `⌥↑` `⌥↓` | `Alt+↑` `Alt+↓` | Move up / down |
-| `⌘⌫` | `Del` | Delete the selected host or (empty) folder |
-| `⌘F` | `Ctrl+F` | Search hosts |
-| `⌘,` | `Ctrl+,` | Open settings |
+| `Ctrl+Shift+D` | `⌘⇧D` | Duplicate the selected host |
+| `Ctrl+D` | `⌘D` | Add to / remove from favorites |
+| `Alt+↑` `Alt+↓` | `⌥↑` `⌥↓` | Move up / down |
+| `Del` | `⌘⌫` | Delete the selected host or (empty) folder |
+| `Ctrl+F` | `⌘F` | Search hosts |
+| `Ctrl+,` | `⌘,` | Open settings |
 
 They are also shown next to each action in the right-click menu, and listed in **Settings → Shortcuts**,
 where **Customize in VS Code…** lets you change them.
+
+The menus and the settings page show the keys for the system you are on. The two pictures below were
+taken on a Mac; on Windows and Linux the same places show `Ctrl`, `Alt` and `Del`.
 
 <p>
   <img src="images/context-menu.png" width="49%" alt="Right-click menu of a host, with the shortcuts">
