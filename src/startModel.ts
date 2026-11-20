@@ -13,17 +13,18 @@ export function startMode(value: unknown): StartMode {
 
 /**
  * Whether the home page opens by itself when a window starts.
- * - `emptyWindow`: only in a window with no folder open and not connected to a server, i.e. the
- *   window you get when you start the editor to go somewhere
+ * - `emptyWindow`: only in a window with no folder open, no file open and not connected to a
+ *   server, i.e. the window you get when you start the editor to go somewhere. A window that was
+ *   opened to show a file (double-clicked in the file manager, `code notes.txt`) is left alone
  * - `always`: in every local window
  * - never inside a window that is already connected to a server, and not on the very first run,
  *   when the setup wizard opens instead
  */
-export function opensOnStartup(mode: StartMode, w: { folders: number; remote: boolean; firstRun: boolean }): boolean {
+export function opensOnStartup(mode: StartMode, w: { folders: number; files: number; remote: boolean; firstRun: boolean }): boolean {
   if (mode === 'never' || w.remote || w.firstRun) {
     return false;
   }
-  return mode === 'always' || w.folders === 0;
+  return mode === 'always' || (w.folders === 0 && w.files === 0);
 }
 
 /** What a click (or Enter) on a host does on the home page. `panel` = whatever a click in the Hosts panel does. */

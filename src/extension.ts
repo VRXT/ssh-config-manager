@@ -1124,9 +1124,14 @@ export function activate(context: vscode.ExtensionContext): { activationMs: numb
 
   // the home page, when this window is one it should open in (see `sshManager.startPage.open`)
   const firstRun = !context.globalState.get<boolean>('wizard.shown');
-  if (opensOnStartup(home.mode, { folders: vscode.workspace.workspaceFolders?.length ?? 0, remote: !!vscode.env.remoteName, firstRun })) {
-    // quiet when files are already open, so it never takes the keyboard away from one
-    home.show(vscode.window.visibleTextEditors.length > 0);
+  // files that are open in this window (not the Welcome page, settings or other panels)
+  const files = vscode.window.tabGroups.all
+    .flatMap(g => g.tabs)
+    .filter(t => t.input instanceof vscode.TabInputText || t.input instanceof vscode.TabInputTextDiff
+      || t.input instanceof vscode.TabInputNotebook || t.input instanceof vscode.TabInputCustom).length;
+  if (opensOnStartup(home.mode, { folders: vscode.workspace.workspaceFolders?.length ?? 0, files, remote: !!vscode.env.remoteName, firstRun })) {
+    // quiet when files are open ("every window" mode), so it never takes the keyboard away from one
+    home.show(files > 0);
   }
 
   // first run on this computer: the setup wizard, once (it can be reopened from the ⋯ menu)

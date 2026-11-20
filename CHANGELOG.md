@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+Fixes for the home page:
+
+- Pressing Enter on the freshly opened page no longer connects to the first favorite. Enter in the
+  search box connects only after you searched for something
+- A folder you just folded or unfolded could spring back when a status check finished at the same moment
+- Opening a file from outside (double-clicking it, `code notes.txt`) no longer gets the home page on
+  top of it. The page opens by itself only in a window with no folder and no file
+- Changelog tidied: notes about how releases are made are no longer listed here
+
 ## 0.8.0
 
 **New**
@@ -21,16 +32,8 @@
 
 - The download is about a third smaller: the illustrations are saved smaller with no visible
   difference, and a picture no screen used is gone
-- Starting up is measured in the release tests and has to stay under 400 ms (it takes about 5 ms)
 - A status check recolors the dots on the home page in place instead of drawing the list again, and
   the page uses no memory while its tab is in the background
-
-**Releases**
-
-- `npm version` now turns the "Unreleased" heading into the version number, and the release workflow
-  refuses to publish without it (0.7.0 and 0.7.1 shipped with the heading still saying "Unreleased").
-  The GitHub Release text is now this file's section for the version
-- Open VSX: published with trusted publishing, like the Marketplace; README badges for Open VSX
 
 ## 0.7.1
 

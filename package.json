@@ -163,7 +163,7 @@
             "never"
           ],
           "enumDescriptions": [
-            "When the window has no folder open and is not connected to a server",
+            "When the window has no folder or file open and is not connected to a server",
             "In every window that is not connected to a server",
             "Only when you run \"SSH Manager: Home\""
           ],

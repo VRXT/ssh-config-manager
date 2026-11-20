@@ -92,7 +92,7 @@ Only that host's lines are rewritten; every other line of the file is kept byte 
 ## SSH Home: your hosts when the editor opens
 
 A home page with every host one click away. It opens by itself when you start the editor in a window
-with no folder open, which is the moment you are about to go somewhere.
+with no folder and no file open, which is the moment you are about to go somewhere.
 
 ![SSH Home: favorites and recent hosts first, then every folder, with a status dot on each host](images/home.png)
 
@@ -107,7 +107,7 @@ with no folder open, which is the moment you are about to go somewhere.
 | Key | |
 |---|---|
 | Type anywhere | Search |
-| `Enter` | Connect to the first result, or to the host that has the focus |
+| `Enter` | After a search: connect to the first result. On a host: connect to it |
 | `Ctrl+Enter` / `Cmd+Enter` | Connect in a terminal instead |
 | Arrow keys | Move between hosts |
 | `/` | Back to the search box |

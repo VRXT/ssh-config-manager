@@ -137,14 +137,16 @@ test('the manifest offers exactly the values the page understands', () => {
 });
 
 test('when the page opens by itself', () => {
-  const w = (folders, remote = false, firstRun = false) => ({ folders, remote, firstRun });
+  const w = (folders, o = {}) => Object.assign({ folders, files: 0, remote: false, firstRun: false }, o);
   assert.strictEqual(m.opensOnStartup('emptyWindow', w(0)), true);
   assert.strictEqual(m.opensOnStartup('emptyWindow', w(1)), false);
+  assert.strictEqual(m.opensOnStartup('emptyWindow', w(0, { files: 1 })), false, 'a window opened to show a file is left alone');
   assert.strictEqual(m.opensOnStartup('always', w(2)), true);
+  assert.strictEqual(m.opensOnStartup('always', w(0, { files: 3 })), true);
   assert.strictEqual(m.opensOnStartup('never', w(0)), false);
   for (const mode of m.START_MODES) {
-    assert.strictEqual(m.opensOnStartup(mode, w(0, true)), false, 'not inside a window connected to a server');
-    assert.strictEqual(m.opensOnStartup(mode, w(0, false, true)), false, 'the setup wizard has the first run');
+    assert.strictEqual(m.opensOnStartup(mode, w(0, { remote: true })), false, 'not inside a window connected to a server');
+    assert.strictEqual(m.opensOnStartup(mode, w(0, { firstRun: true })), false, 'the setup wizard has the first run');
   }
   assert.strictEqual(m.startMode('always'), 'always');
   assert.strictEqual(m.startMode('bogus'), 'emptyWindow');

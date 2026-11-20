@@ -136,7 +136,7 @@ function list() {
   if (words().length) {
     const hits = everyHost(m).filter(shown);
     return hits.length
-      ? section(plural(hits.length, 'result'), everyHost(m), { key: 'results', showFolder: true, note: 'Enter opens the first' })
+      ? section(plural(hits.length, 'result'), everyHost(m), { key: 'results', showFolder: true, note: `Enter: ${DOES[S.primary]} the first` })
       : el('div', { class: 'none' }, `No host matches “${query}”${only === 'all' ? '' : ' among the hosts that are ' + only}. `,
         el('a', { role: 'button', tabindex: '0', onclick: reset }, 'Clear the search'));
   }
@@ -223,7 +223,7 @@ function render() {
   const focused = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.key : '';
   document.getElementById('home').className = 'home ' + S.opts.density;
   document.getElementById('header').replaceChildren(header());
-  document.getElementById('hint').textContent = `Enter: ${DOES[S.primary]} · ${S.mac ? '⌘' : 'Ctrl'}+Enter: terminal`;
+  document.getElementById('hint').textContent = `Search, then Enter: ${DOES[S.primary]} · ${S.mac ? '⌘' : 'Ctrl'}+Enter: terminal`;
   document.getElementById('list').replaceChildren(...[list()].flat(Infinity).filter(Boolean));
   document.getElementById('foot').replaceChildren(...foot());
   if (focused) {
@@ -254,11 +254,14 @@ function patchStatus() {
 }
 
 /** The state without anything a status check changes. */
-const shape = state => JSON.stringify(state, (k, v) => (k === 'status' || k === 'up' || k === 'down' ? undefined : v));
+const shape = state => JSON.stringify(state, (k, v) => (k === 'status' || k === 'up' || k === 'down' || k === 'collapsed' ? undefined : v));
 let lastState = '';
 let lastShape = '';
 
 function receive(state) {
+  // Which folders are folded is taken from the extension once, when the page opens. After that the
+  // page decides: a status update that was already on its way must not undo a click made just now.
+  if (built) state.collapsed = [...collapsed]; else collapsed = new Set(state.collapsed);
   const text = JSON.stringify(state);
   if (text === lastState) return; // the config was re-read and nothing changed
   const sh = shape(state);
@@ -267,7 +270,6 @@ function receive(state) {
   lastState = text;
   lastShape = sh;
   S = state;
-  collapsed = new Set(S.collapsed);
   statusOnly ? patchStatus() : render();
 }
 
@@ -307,7 +309,8 @@ document.addEventListener('keydown', e => {
     const next = tiles[at + (e.key === 'ArrowRight' ? 1 : -1)];
     if (next) next.focus();
   } else if (e.key === 'Enter' && typing) {
-    if (tiles.length) { e.preventDefault(); tiles[0].dispatchEvent(new MouseEvent('click', { metaKey: e.metaKey, ctrlKey: e.ctrlKey })); }
+    // only after a search: a stray Enter on the freshly opened page must not connect to anything
+    if (tiles.length && words().length) { e.preventDefault(); tiles[0].dispatchEvent(new MouseEvent('click', { metaKey: e.metaKey, ctrlKey: e.ctrlKey })); }
   } else if (e.key === 'Enter' && at >= 0 && (e.metaKey || e.ctrlKey)) {
     e.preventDefault();
     tiles[at].dispatchEvent(new MouseEvent('click', { metaKey: true }));
