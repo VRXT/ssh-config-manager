@@ -10,6 +10,12 @@
 </p>
 
 <p align="center">
+  <a href="https://vrxt.github.io/ssh-config-manager/"><b>Website</b></a> ·
+  <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager">VS Code Marketplace</a> ·
+  <a href="https://open-vsx.org/extension/vrxt/ssh-config-manager">Open VSX</a>
+</p>
+
+<p align="center">
   <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://vsmarketplacebadges.dev/version-short/vrxt.ssh-config-manager.svg?label=Marketplace&color=1f6feb" alt="Marketplace version"></a>
   <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://vsmarketplacebadges.dev/installs-short/vrxt.ssh-config-manager.svg?label=installs&color=1f6feb" alt="Marketplace installs"></a>
   <a href="https://open-vsx.org/extension/vrxt/ssh-config-manager"><img src="https://img.shields.io/open-vsx/v/vrxt/ssh-config-manager?label=Open%20VSX&color=a60ee5" alt="Open VSX version"></a>

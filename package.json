@@ -20,7 +20,7 @@
   "bugs": {
     "url": "https://github.com/VRXT/ssh-config-manager/issues"
   },
-  "homepage": "https://github.com/VRXT/ssh-config-manager#readme",
+  "homepage": "https://vrxt.github.io/ssh-config-manager/",
   "keywords": [
     "ssh",
     "ssh manager",
