@@ -11,7 +11,9 @@
 
 <p align="center">
   <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://vsmarketplacebadges.dev/version-short/vrxt.ssh-config-manager.svg?label=Marketplace&color=1f6feb" alt="Marketplace version"></a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://vsmarketplacebadges.dev/installs-short/vrxt.ssh-config-manager.svg?color=1f6feb" alt="Installs"></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager"><img src="https://vsmarketplacebadges.dev/installs-short/vrxt.ssh-config-manager.svg?label=installs&color=1f6feb" alt="Marketplace installs"></a>
+  <a href="https://open-vsx.org/extension/vrxt/ssh-config-manager"><img src="https://img.shields.io/open-vsx/v/vrxt/ssh-config-manager?label=Open%20VSX&color=a60ee5" alt="Open VSX version"></a>
+  <a href="https://open-vsx.org/extension/vrxt/ssh-config-manager"><img src="https://img.shields.io/open-vsx/dt/vrxt/ssh-config-manager?label=downloads&color=a60ee5" alt="Open VSX downloads"></a>
   <a href="https://github.com/VRXT/ssh-config-manager/actions/workflows/ci.yml"><img src="https://github.com/VRXT/ssh-config-manager/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license"></a>
 </p>
@@ -37,7 +39,9 @@ OpenSSH ignores, so `ssh`, Remote-SSH and every other tool keep working exactly 
 
 ## Get started in a minute
 
-Install **SSH Config Manager** from the Marketplace (or `ext install vrxt.ssh-config-manager`).
+Install **SSH Config Manager** from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager)
+(or `ext install vrxt.ssh-config-manager`). In Cursor, VSCodium, Windsurf and other VS Code builds, install it from
+[Open VSX](https://open-vsx.org/extension/vrxt/ssh-config-manager): search for it in the editor's Extensions view.
 The setup wizard opens the first time and walks through everything, one screen at a time. Every step
 is optional, and you can run it again whenever you like: **⋯ → Setup Wizard** in the Hosts panel.
 
