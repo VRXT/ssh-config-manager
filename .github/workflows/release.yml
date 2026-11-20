@@ -1,12 +1,14 @@
 name: Release
 
 # Runs when you push a version tag, e.g.:
-#   npm version patch        (bumps package.json and creates tag v0.4.2)
+#   npm version patch        (bumps package.json, turns "## Unreleased" in CHANGELOG.md
+#                             into "## 0.4.2", and creates tag v0.4.2)
 #   git push --follow-tags
 #
 # It builds the .vsix, attaches it to a GitHub Release, and publishes it to the
 # VS Code Marketplace with trusted publishing (OIDC) — no token or secret needed.
-# With the OVSX_PAT secret set it also publishes the same .vsix to Open VSX.
+# It also publishes the same .vsix to Open VSX, with trusted publishing too (the OVSX_PAT
+# secret is only a fallback, needed for the first publish there).
 # The Marketplace policy for publisher VRXT must name: repository VRXT/ssh-config-manager,
 # workflow release.yml, environment production.
 on:
@@ -19,7 +21,7 @@ jobs:
     environment: production # must match the Marketplace trusted publishing policy
     permissions:
       contents: write # create the GitHub Release
-      id-token: write # let vsce request the OIDC token for the Marketplace
+      id-token: write # let vsce and ovsx request the OIDC token for the stores
     steps:
       - uses: actions/checkout@v7
 
@@ -36,6 +38,12 @@ jobs:
             exit 1
           fi
 
+      # A release must not ship with the top heading still saying "Unreleased" (0.7.0 and 0.7.1 did).
+      - name: Check the changelog has a section for this version
+        run: |
+          node scripts/changelog.js check "$GITHUB_REF_NAME"
+          node scripts/changelog.js notes "$GITHUB_REF_NAME" > release-notes.md
+
       - name: Install dependencies
         run: npm ci
 
@@ -49,20 +57,30 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: ssh-config-manager-*.vsix
-          generate_release_notes: true
+          body_path: release-notes.md # this version's section of CHANGELOG.md
+          generate_release_notes: true # appends the "Full Changelog" compare link
 
       - name: Publish to VS Code Marketplace (trusted publishing)
         run: npx vsce publish --oidc --packagePath ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
 
       # Open VSX is the extension store of Cursor, VSCodium, Windsurf and other VS Code builds.
-      # Runs when the OVSX_PAT repository secret is set (a token from open-vsx.org); skipped otherwise.
+      # Trusted publishing (OIDC) first: no token, uses the trusted publisher registered on
+      # open-vsx.org for VRXT/ssh-config-manager, workflow release.yml, environment production.
+      # Open VSX only accepts that once the extension has a published version, so the very first
+      # publish (and any run where OIDC is refused) falls back to the OVSX_PAT secret if it is set.
+      # The secret is passed under another name on purpose: ovsx prefers OVSX_PAT over OIDC.
       - name: Publish to Open VSX
         if: ${{ !cancelled() }}
         env:
-          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          FALLBACK_PAT: ${{ secrets.OVSX_PAT }}
         run: |
-          if [ -z "$OVSX_PAT" ]; then
-            echo "OVSX_PAT secret not set; skipping Open VSX."
-            exit 0
+          VSIX=ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
+          if npx ovsx publish --trusted-publishing --skip-duplicate --packagePath "$VSIX"; then
+            echo "Published to Open VSX with trusted publishing."
+          elif [ -n "$FALLBACK_PAT" ]; then
+            echo "::warning::Open VSX trusted publishing failed; publishing with the OVSX_PAT secret instead."
+            npx ovsx publish --skip-duplicate --packagePath "$VSIX" -p "$FALLBACK_PAT"
+          else
+            echo "::error::Open VSX trusted publishing failed and no OVSX_PAT secret is set."
+            exit 1
           fi
-          npx ovsx publish --skip-duplicate --packagePath ssh-config-manager-${GITHUB_REF_NAME#v}.vsix
