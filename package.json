@@ -2,7 +2,7 @@
   "name": "ssh-config-manager",
   "displayName": "SSH Config Manager",
   "description": "SSH manager for VS Code: organize your ssh_config in a side bar with groups, icons, colors, tags, notes and favorites, stored as comments inside the config file itself. Connect in a terminal or via Remote-SSH.",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "publisher": "vrxt",
   "author": {
     "name": "Mushari Alshqar"
@@ -157,7 +157,11 @@
         },
         "sshManager.startPage.open": {
           "type": "string",
-          "enum": ["emptyWindow", "always", "never"],
+          "enum": [
+            "emptyWindow",
+            "always",
+            "never"
+          ],
           "enumDescriptions": [
             "When the window has no folder open and is not connected to a server",
             "In every window that is not connected to a server",
@@ -168,7 +172,12 @@
         },
         "sshManager.startPage.click": {
           "type": "string",
-          "enum": ["panel", "newWindow", "window", "terminal"],
+          "enum": [
+            "panel",
+            "newWindow",
+            "window",
+            "terminal"
+          ],
           "enumDescriptions": [
             "The same as a click in the Hosts panel (a new window when that is set to select or edit)",
             "Open the host in a new window",
@@ -185,13 +194,21 @@
         },
         "sshManager.startPage.density": {
           "type": "string",
-          "enum": ["comfortable", "compact"],
+          "enum": [
+            "comfortable",
+            "compact"
+          ],
           "default": "comfortable",
           "description": "Size of the hosts on the SSH Home page. Compact fits more on the screen."
         },
         "sshManager.startPage.recent": {
           "type": "integer",
-          "enum": [0, 4, 8, 12],
+          "enum": [
+            0,
+            4,
+            8,
+            12
+          ],
           "default": 8,
           "markdownDescription": "How many of the hosts you connected to last are shown first on the SSH Home page. `0` hides them."
         }
