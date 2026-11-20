@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SSH Config Manager: your SSH hosts, organized, inside your editor</title>
+<meta name="description" content="A free extension for VS Code, Cursor, VSCodium and Windsurf. Folders, search, one-click connect, server status, backups and sync for your SSH hosts, all stored as comments inside your normal SSH config file.">
+<meta name="theme-color" content="#061b3d">
+<link rel="canonical" href="https://vrxt.github.io/ssh-config-manager/">
+<link rel="icon" type="image/png" href="img/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="SSH Config Manager">
+<meta property="og:description" content="Your SSH hosts in one tidy panel inside your editor: folders, search, one-click connect, backups and sync, stored as comments inside your normal SSH config file.">
+<meta property="og:url" content="https://vrxt.github.io/ssh-config-manager/">
+<meta property="og:image" content="https://vrxt.github.io/ssh-config-manager/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="top">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><img src="img/icon.png" alt="" width="28" height="28"><span>SSH Config Manager</span></a>
+    <nav aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#home">Home page</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/VRXT/ssh-config-manager" rel="noopener">GitHub</a>
+    </nav>
+    <a class="btn small" href="#install">Install</a>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ------------------------------------------------------------ hero -->
+<section class="hero">
+  <div class="hero-art" aria-hidden="true"></div>
+  <div class="wrap hero-in">
+    <p class="eyebrow"><span class="live"></span>Free and open source <span id="ver"></span></p>
+    <h1>Your SSH hosts, <em>one click away.</em></h1>
+    <p class="lead">Folders, search, server status, backups and sync for your SSH hosts, in a tidy panel inside your editor. Everything is stored as comments in your normal <code>~/.ssh/config</code>, so <code>ssh</code> and every other tool keep working exactly as before.</p>
+    <div class="cta">
+      <a class="btn big" href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager" rel="noopener">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M17.6 2.2 9.3 9.8 4.6 6.2 2.5 7.3v9.4l2.1 1.1 4.7-3.6 8.3 7.6 4.4-2.1V4.3zM5 14.6V9.4L7.7 12zm12.5 1.5L11.900 12l5.6-4.1z"/></svg>
+        Install for VS Code</a>
+      <a class="btn big alt" href="https://open-vsx.org/extension/vrxt/ssh-config-manager" rel="noopener">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3 3 8v8l9 5 9-5V8zM3 8l9 5 9-5M12 13v8"/></svg>
+        Get it on Open VSX</a>
+    </div>
+    <p class="cta-note">Open VSX is the store behind <b>Cursor</b>, <b>VSCodium</b>, <b>Windsurf</b> and other VS Code based editors. <a href="#install">All install options</a></p>
+
+    <figure class="window hero-shot">
+      <div class="bar"><i></i><i></i><i></i><span>config — .ssh</span></div>
+      <img src="img/overview.jpg" width="1600" height="1000" alt="The Hosts panel with folders, favorites and tags, next to the SSH config file it writes" data-zoom>
+    </figure>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ facts -->
+<section class="facts">
+  <div class="wrap facts-in">
+    <div><b>Nothing to convert</b><span>Your existing config is listed the moment you install.</span></div>
+    <div><b>Nothing leaves your computer</b><span>No account, no server, no telemetry.</span></div>
+    <div><b>A backup before every change</b><span>One click brings an older version back.</span></div>
+    <div><b>Light</b><span>Starts in a few milliseconds and stays out of the way.</span></div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ features -->
+<section class="sec" id="features">
+  <div class="wrap">
+    <p class="kicker">Features</p>
+    <h2>Everything a long list of servers needs</h2>
+    <p class="sub">Built for people with ten hosts, and for people with two hundred.</p>
+
+    <div class="grid">
+      <article class="card">
+        <img src="img/art-folders.jpg" alt="" loading="lazy" width="640" height="360">
+        <h3>Folders and subfolders</h3>
+        <p>Group hosts by project, client or provider. Give them icons, colors, tags and notes. Drag to reorder, switch a host or a whole folder off without deleting it.</p>
+      </article>
+      <article class="card">
+        <img src="img/art-start.jpg" alt="" loading="lazy" width="640" height="360">
+        <h3>Connect your way</h3>
+        <p>In a terminal, in this window or in a new one. From the panel, the quick picker, the status bar or the home page. Straight into a folder on the server if you like.</p>
+      </article>
+      <article class="card">
+        <img src="img/art-picker.jpg" alt="" loading="lazy" width="640" height="360">
+        <h3>A tidy Remote-SSH list</h3>
+        <p>The editor’s own “Connect to Host” list gets the same folders: a heading for each one, a gap between them, and your favorites on top.</p>
+      </article>
+      <article class="card">
+        <img src="img/art-backup.jpg" alt="" loading="lazy" width="640" height="360">
+        <h3>Backups and restore</h3>
+        <p>A copy of the config is saved next to it before every change. Pick any earlier version from the list and it is back.</p>
+      </article>
+      <article class="card">
+        <img src="img/art-sync.jpg" alt="" loading="lazy" width="640" height="360">
+        <h3>Sync between computers</h3>
+        <p>Share one config through Dropbox, iCloud Drive or OneDrive. Your SSH keys are never synced.</p>
+      </article>
+      <article class="card">
+        <img src="img/art-keys.jpg" alt="" loading="lazy" width="640" height="360">
+        <h3>SSH key help</h3>
+        <p>See which hosts need a key that is not on this computer, and create or pick one in a single step.</p>
+      </article>
+    </div>
+
+    <div class="split">
+      <div>
+        <h3>Up or down, at a glance</h3>
+        <p>A small dot on every host shows whether the server answers right now: green for up, red for down. A folder turns yellow when some of its hosts are up and some are down, and tells you how many.</p>
+        <h3>When a host will not connect</h3>
+        <p><b>Test Connection</b> runs the steps <code>ssh</code> takes, in order, and shows which one fails and how to fix it: the config, the name, the port, the key, the login.</p>
+        <h3>Search as you type</h3>
+        <p>By name, address, tag, note or option, with one-click filters by tag, provider and folder.</p>
+      </div>
+      <div class="shots2">
+        <figure class="window"><img src="img/status.jpg" loading="lazy" width="640" height="472" alt="Host and folder icons with a small status dot: green, red and yellow" data-zoom></figure>
+        <figure class="window"><img src="img/search.jpg" loading="lazy" width="940" height="920" alt="The search box with filters for tags, providers and folders" data-zoom></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ home page demo -->
+<section class="sec dark" id="home">
+  <div class="wrap">
+    <p class="kicker">SSH Home</p>
+    <h2>Open the editor. Pick a server. You are in.</h2>
+    <p class="sub">A home page that opens when the editor starts with nothing else to show: favorites and recent hosts first, then every folder.</p>
+
+    <div class="demo">
+      <div class="tabs" role="tablist" aria-label="Demos">
+        <button role="tab" aria-selected="true" aria-controls="demo-img" data-src="img/home-search.gif" data-alt="Typing “prod db” narrows thirteen hosts to one, and Enter opens it in a new window">
+          <b>Search and connect</b><span>Type a few letters, press Enter.</span></button>
+        <button role="tab" aria-selected="false" aria-controls="demo-img" data-src="img/home-filter.gif" data-alt="Showing only the hosts that are down, folding all folders, then connecting to a host in a terminal">
+          <b>Filter and fold</b><span>See what is down, fold what you do not need.</span></button>
+      </div>
+      <figure class="window">
+        <div class="bar"><i></i><i></i><i></i><span>SSH Home</span></div>
+        <img id="demo-img" src="img/home-search.gif" width="960" height="611" loading="lazy" alt="Typing “prod db” narrows thirteen hosts to one, and Enter opens it in a new window">
+      </figure>
+    </div>
+
+    <ul class="keys">
+      <li><kbd>type</kbd> search from anywhere on the page</li>
+      <li><kbd>Enter</kbd> connect to the first match</li>
+      <li><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> walk the hosts</li>
+      <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Enter</kbd> connect in a terminal</li>
+      <li><kbd>Esc</kbd> clear</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ how it works -->
+<section class="sec" id="how">
+  <div class="wrap two">
+    <div>
+      <p class="kicker">How it works</p>
+      <h2>The config file stays the single source of truth</h2>
+      <p>There is no database and no hidden settings file. Folders, icons, tags, favorites and even the extension’s own settings are written as <code>#@…</code> comment lines, which OpenSSH ignores.</p>
+      <ul class="ticks">
+        <li>Copy the file to another computer and everything comes with it.</li>
+        <li>Edit it by hand whenever you like; the panel follows.</li>
+        <li>Only the block you change is rewritten. Every other line stays byte for byte as it was.</li>
+        <li>Uninstall the extension and you are left with a normal, working config.</li>
+      </ul>
+      <img class="inline-art" src="img/config-file.jpg" alt="" loading="lazy" width="1344" height="752">
+    </div>
+    <figure class="code" aria-label="Example of the comment format">
+      <div class="bar"><i></i><i></i><i></i><span>~/.ssh/config</span></div>
+<pre><code><span class="c">#@ssh-manager sort=name click=terminal</span>
+
+<span class="c">#@group "Acme Store" icon=cloud color=blue</span>
+<span class="c">#@section "AWS production"</span>
+
+<span class="c">#@host icon=globe color=green tags=prod,web fav=1</span>
+<span class="k">Host</span> store-web-1
+    <span class="k">HostName</span> 203.0.113.21
+    <span class="k">User</span> deploy
+    <span class="k">IdentityFile</span> ~/.ssh/acme_ed25519
+
+<span class="c">#@host icon=database tags=prod,db note="Main DB"</span>
+<span class="k">Host</span> store-db
+    <span class="k">HostName</span> 10.0.1.15
+    <span class="k">User</span> postgres
+    <span class="k">ProxyJump</span> store-bastion
+
+<span class="c">#@off Host old-wordpress</span>
+<span class="c">#@off     HostName 198.51.100.99</span></code></pre>
+      <figcaption>Blue lines are what the extension adds. <code>ssh</code> reads the rest, as always.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ gallery -->
+<section class="sec dark" id="tour">
+  <div class="wrap">
+    <p class="kicker">A closer look</p>
+    <h2>Made to feel like part of the editor</h2>
+    <p class="sub">Click a picture to see it full size.</p>
+    <div class="gallery">
+      <figure><img src="img/tree.jpg" loading="lazy" width="924" height="1040" alt="The Hosts panel: favorites, folders and a tooltip with a host's details" data-zoom><figcaption>The Hosts panel</figcaption></figure>
+      <figure><img src="img/quick-connect.jpg" loading="lazy" width="1208" height="880" alt="The quick connect picker, grouped by folder" data-zoom><figcaption>Quick connect</figcaption></figure>
+      <figure><img src="img/edit-host.jpg" loading="lazy" width="1600" height="956" alt="The form for editing a host" data-zoom><figcaption>Edit a host in a form</figcaption></figure>
+      <figure><img src="img/home.jpg" loading="lazy" width="1600" height="1444" alt="SSH Home with favorites, recent hosts and folders" data-zoom><figcaption>SSH Home</figcaption></figure>
+      <figure><img src="img/remote-list.jpg" loading="lazy" width="1600" height="1000" alt="Settings for the Remote-SSH list with a live preview" data-zoom><figcaption>The Remote-SSH list, with a live preview</figcaption></figure>
+      <figure><img src="img/backups.jpg" loading="lazy" width="1600" height="1000" alt="The list of backups in the settings page" data-zoom><figcaption>Backups</figcaption></figure>
+      <figure><img src="img/sync.jpg" loading="lazy" width="1600" height="1000" alt="Sync settings" data-zoom><figcaption>Sync</figcaption></figure>
+      <figure><img src="img/wizard.jpg" loading="lazy" width="1600" height="1000" alt="The setup wizard" data-zoom><figcaption>The setup wizard</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ install -->
+<section class="sec" id="install">
+  <div class="wrap">
+    <p class="kicker">Install</p>
+    <h2>Pick your editor</h2>
+    <p class="sub">The same extension everywhere, free, under the MIT license.</p>
+
+    <div class="install">
+      <article class="opt">
+        <header><span class="tag blue">Visual Studio Marketplace</span><h3>VS Code</h3></header>
+        <p>Search for <b>SSH Config Manager</b> in the Extensions view, or use a button.</p>
+        <div class="row">
+          <a class="btn" href="vscode:extension/vrxt.ssh-config-manager">Open in VS Code</a>
+          <a class="btn ghost" href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager" rel="noopener">Marketplace page</a>
+        </div>
+        <div class="cmd"><code>code --install-extension vrxt.ssh-config-manager</code><button type="button" data-copy="code --install-extension vrxt.ssh-config-manager" aria-label="Copy the command">Copy</button></div>
+      </article>
+
+      <article class="opt">
+        <header><span class="tag purple">Open VSX</span><h3>Cursor, VSCodium, Windsurf and others</h3></header>
+        <p>Search for <b>SSH Config Manager</b> in your editor’s Extensions view, or use a button.</p>
+        <div class="row">
+          <a class="btn purple" href="https://open-vsx.org/extension/vrxt/ssh-config-manager" rel="noopener">Open VSX page</a>
+          <a class="btn ghost" href="cursor:extension/vrxt.ssh-config-manager">Open in Cursor</a>
+          <a class="btn ghost" href="vscodium:extension/vrxt.ssh-config-manager">Open in VSCodium</a>
+          <a class="btn ghost" href="windsurf:extension/vrxt.ssh-config-manager">Open in Windsurf</a>
+        </div>
+        <div class="cmd"><code>codium --install-extension vrxt.ssh-config-manager</code><button type="button" data-copy="codium --install-extension vrxt.ssh-config-manager" aria-label="Copy the command">Copy</button></div>
+      </article>
+
+      <article class="opt">
+        <header><span class="tag">File</span><h3>Download the .vsix</h3></header>
+        <p>For computers without a store. In the Extensions view choose <b>⋯ → Install from VSIX…</b> and pick the file.</p>
+        <div class="row">
+          <a class="btn ghost" id="vsix" href="https://github.com/VRXT/ssh-config-manager/releases/latest" rel="noopener">Download from GitHub Releases</a>
+        </div>
+        <p class="muted" id="stats"></p>
+      </article>
+    </div>
+
+    <div class="then">
+      <img src="img/editors.jpg" alt="" loading="lazy" width="1344" height="752">
+      <div>
+        <h3>Then what?</h3>
+        <ol>
+          <li>The setup wizard opens once and walks through everything. Every step is optional.</li>
+          <li>Your existing <code>~/.ssh/config</code> is listed right away. Nothing is written until you change something.</li>
+          <li>Press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd> (<kbd>⌘</kbd><kbd>⌥</kbd><kbd>S</kbd> on a Mac) to connect from anywhere.</li>
+        </ol>
+        <p class="muted">Opening a server in an editor window uses the SSH extension your editor has: Remote - SSH in VS Code, Cursor’s own in Cursor, Open Remote - SSH in VSCodium. Connecting in a terminal needs nothing extra.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ faq -->
+<section class="sec dark" id="faq">
+  <div class="wrap narrow">
+    <p class="kicker">Questions</p>
+    <h2>Good to know</h2>
+    <details open><summary>Will it change my existing config?</summary><p>Not until you change something yourself. Reading and listing never writes. When you do edit, only that host’s block is rewritten, and a backup of the whole file is saved first.</p></details>
+    <details><summary>Does <code>ssh</code> in a terminal still work the same?</summary><p>Yes. Everything the extension adds is a comment line, and OpenSSH skips comments. Other tools that read the file are not affected either.</p></details>
+    <details><summary>Is anything sent to a server?</summary><p>No. There is no account and no telemetry. Sync, if you turn it on, is a file in a folder you choose, such as Dropbox, iCloud Drive or OneDrive. SSH keys are never part of it.</p></details>
+    <details><summary>My config is somewhere else. Can I use it?</summary><p>Yes. Point the extension at any file, and hosts from <code>Include</code>d files are shown too.</p></details>
+    <details><summary>I already organize the file with comment banners. What happens to them?</summary><p>Hand-written layouts with banner comments for projects and sub-headings are understood as folders and subfolders as they are, without rewriting them.</p></details>
+    <details><summary>Does it work inside a remote window?</summary><p>Yes. The extension runs on your own computer, so your hosts are there in local and remote windows alike.</p></details>
+    <details><summary>What does it cost?</summary><p>Nothing. It is open source under the MIT license.</p></details>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ closing -->
+<section class="closing">
+  <div class="wrap closing-in">
+    <img src="img/pulse.gif" alt="" width="144" height="144" loading="lazy">
+    <div>
+      <h2>Tidy up your servers in a minute</h2>
+      <div class="cta">
+        <a class="btn big" href="https://marketplace.visualstudio.com/items?itemName=vrxt.ssh-config-manager" rel="noopener">Install for VS Code</a>
+        <a class="btn big alt" href="https://open-vsx.org/extension/vrxt/ssh-config-manager" rel="noopener">Get it on Open VSX</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <span>© 2026 Mushari Alshqar · MIT license</span>
+    <nav aria-label="Project links">
+      <a href="https://github.com/VRXT/ssh-config-manager" rel="noopener">Source</a>
+      <a href="https://github.com/VRXT/ssh-config-manager/blob/main/CHANGELOG.md" rel="noopener">Changelog</a>
+      <a href="https://github.com/VRXT/ssh-config-manager/issues" rel="noopener">Report a problem</a>
+      <a href="https://github.com/VRXT/ssh-config-manager#readme" rel="noopener">Documentation</a>
+    </nav>
+  </div>
+</footer>
+
+<dialog id="zoom" aria-label="Picture, full size"><img alt=""><button type="button" aria-label="Close">×</button></dialog>
+<script src="app.js" defer></script>
+</body>
+</html>

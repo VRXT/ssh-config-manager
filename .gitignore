@@ -8,3 +8,4 @@ research_notes/
 reports/
 node_modules.nosync/
 node_modules_old_icloud/
+.claude/

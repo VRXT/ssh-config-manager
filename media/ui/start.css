@@ -58,7 +58,9 @@ button.stat:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   border: 1px solid var(--line); background: var(--card); color: var(--vscode-foreground); overflow: hidden; }
 .tile:hover { background: var(--hover); border-color: var(--vscode-focusBorder); }
 .tile:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
-.tile::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c, transparent); }
+/* a host with a color of its own: the whole tile is tinted in it */
+.tile[class*="c-"] { background: color-mix(in srgb, var(--c) 10%, var(--card)); border-color: color-mix(in srgb, var(--c) 50%, transparent); }
+.tile[class*="c-"]:hover { background: color-mix(in srgb, var(--c) 18%, var(--card)); border-color: var(--c); }
 .tile .dot { margin-top: 7px; }
 .tile .dot.up { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
 .tile .dot.down { background: var(--bad); }

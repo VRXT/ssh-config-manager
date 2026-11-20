@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Home page: a host with a color of its own is now tinted in that color, in place of the stripe on its left edge
+
 ## 0.8.1
 
 Fixes for the home page:
