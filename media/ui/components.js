@@ -178,3 +178,14 @@ function foldersBlock(S) {
       item('Turn a whole folder off', 'Right-click a folder and choose Enable / Disable to hide all of its hosts from ssh without deleting them.')),
   ];
 }
+
+// ---------------------------------------------------------------- home page
+
+/** When the home page opens by itself. Used by the settings page and the setup wizard. */
+function homeOpenBlock(S) {
+  return opts([
+    { v: 'emptyWindow', t: 'When no folder is open', d: 'In the window you get when you start the editor to go somewhere.', badge: 'Recommended' },
+    { v: 'always', t: 'In every window', d: 'Also in windows that open a project folder.' },
+    { v: 'never', t: 'Never', d: 'Only when you open it yourself.' },
+  ], S.home.open, v => send('home', { key: 'open', value: v }));
+}

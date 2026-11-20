@@ -154,6 +154,46 @@
           "type": "boolean",
           "default": true,
           "description": "Animate the status dot: a soft pulse while a server is up, a slow blink while it is down."
+        },
+        "sshManager.startPage.open": {
+          "type": "string",
+          "enum": ["emptyWindow", "always", "never"],
+          "enumDescriptions": [
+            "When the window has no folder open and is not connected to a server",
+            "In every window that is not connected to a server",
+            "Only when you run \"SSH Manager: Home\""
+          ],
+          "default": "emptyWindow",
+          "description": "When the SSH Home page (all your hosts, one click to connect) opens by itself as the editor starts."
+        },
+        "sshManager.startPage.click": {
+          "type": "string",
+          "enum": ["panel", "newWindow", "window", "terminal"],
+          "enumDescriptions": [
+            "The same as a click in the Hosts panel (a new window when that is set to select or edit)",
+            "Open the host in a new window",
+            "Open the host in this window",
+            "Connect in a terminal"
+          ],
+          "default": "panel",
+          "description": "What a click (or Enter) on a host does on the SSH Home page."
+        },
+        "sshManager.startPage.banner": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the picture and totals at the top of the SSH Home page."
+        },
+        "sshManager.startPage.density": {
+          "type": "string",
+          "enum": ["comfortable", "compact"],
+          "default": "comfortable",
+          "description": "Size of the hosts on the SSH Home page. Compact fits more on the screen."
+        },
+        "sshManager.startPage.recent": {
+          "type": "integer",
+          "enum": [0, 4, 8, 12],
+          "default": 8,
+          "markdownDescription": "How many of the hosts you connected to last are shown first on the SSH Home page. `0` hides them."
         }
       }
     },
@@ -458,6 +498,17 @@
         "icon": "$(gear)"
       },
       {
+        "command": "sshManager.home",
+        "title": "Home",
+        "category": "SSH Manager",
+        "icon": "$(home)"
+      },
+      {
+        "command": "sshManager.clearRecentHosts",
+        "title": "Clear Recent Hosts",
+        "category": "SSH Manager"
+      },
+      {
         "command": "sshManager.wizard",
         "title": "Setup Wizard",
         "category": "SSH Manager",
@@ -670,6 +721,11 @@
           "command": "sshManager.shortcuts",
           "when": "view == sshManager.hosts",
           "group": "3_help@1"
+        },
+        {
+          "command": "sshManager.home",
+          "when": "view == sshManager.hosts",
+          "group": "3_help@0"
         },
         {
           "command": "sshManager.wizard",
@@ -6065,7 +6121,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js && node test/doctor.test.js && node test/health.test.js",
+    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js && node test/doctor.test.js && node test/health.test.js && node test/start.test.js",
     "vscode:prepublish": "npm run compile",
     "version": "node scripts/changelog.js stamp && git add CHANGELOG.md",
     "package": "vsce package",

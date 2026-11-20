@@ -1,6 +1,6 @@
 // The setup wizard: numbered steps on the left, one topic per screen, Back / Continue.
 // Every step can be reached again by clicking it, and the whole wizard can be run again any time.
-/* global el, send, art, btn, card, item, toggle, pickerBlock, backupsBlock, syncBlock, keysBlock, shortcutsBlock, foldersBlock, vscode */
+/* global el, send, art, btn, card, item, toggle, homeOpenBlock, pickerBlock, backupsBlock, syncBlock, keysBlock, shortcutsBlock, foldersBlock, vscode */
 let S;
 const saved = vscode.getState() || {};
 let step = saved.step || 0;
@@ -23,6 +23,16 @@ function welcomeBlock(S) {
 
 function backupStep(S) {
   return backupsBlock(S, 4);
+}
+
+function homeStep(S) {
+  return [
+    homeOpenBlock(S),
+    card(
+      item('Favorites and recent hosts first', 'Then every folder. Type to search, press Enter to connect.'),
+      item('Have a look', 'It opens next to this wizard.', btn('Open the Home Page', () => send('command', { id: 'sshManager.home' }), 'ghost'))),
+    el('p', { class: 'muted small gap-t' }, 'More choices for the page (what a click does, compact size, recent hosts) are in Settings → Home page.'),
+  ];
 }
 
 function doneBlock(S) {
@@ -48,6 +58,7 @@ const STEPS = [
   { label: 'Backups', art: 'backup', title: 'Backups you can restore', lead: 'A copy of the config is saved in a folder next to it before every change.', body: backupStep },
   { label: 'Sync', art: 'sync', title: 'The same hosts on every computer', lead: 'Optional. Share the config through a file in Dropbox, iCloud Drive or OneDrive.', body: syncBlock },
   { label: 'SSH keys', art: 'keys', title: 'Check your SSH keys', lead: 'Keys are never synced or copied by the extension. This checks the ones your hosts need are on this computer.', body: keysBlock },
+  { label: 'Home page', art: 'start', title: 'A home page for your hosts', lead: 'Every host one click away, with the ones you use most on top. It can open by itself when you start the editor.', body: homeStep },
   { label: 'Shortcuts', art: 'shortcuts', title: 'Work from the keyboard', lead: 'Click the Hosts list once, then:', body: S => shortcutsBlock(S, true) },
   { label: 'All set', art: 'done', title: 'You’re all set', lead: 'Here is where things stand.', body: doneBlock },
 ];

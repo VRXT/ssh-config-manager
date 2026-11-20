@@ -1,0 +1,125 @@
+/* The home page. Builds on ui.css; colors come from the user's VS Code theme. */
+.home { max-width: 1180px; margin: 0 auto; padding: 22px 28px 40px; }
+
+/* banner: the illustration, shown whole against the right edge, with the title over its empty left side.
+   The banner is the same navy as the picture, so the picture has no visible edge. */
+.banner { position: relative; border-radius: 14px; overflow: hidden; background: #071c3d; color: #fff; height: 210px; display: flex; align-items: center; }
+.banner img { position: absolute; right: 0; top: 0; height: 100%; width: auto; max-width: none; }
+.banner .shade { position: absolute; inset: 0; background: linear-gradient(90deg, #071c3d 0%, #071c3d 30%, rgba(7,28,61,0) 58%); }
+.banner .txt { position: relative; padding: 26px 30px; max-width: 540px; }
+.banner h1 { color: #fff; font-size: 1.9em; margin: 0 0 4px; }
+.banner p { color: rgba(255,255,255,.78); margin: 0; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.stat { display: inline-flex; align-items: center; gap: 7px; padding: 3px 11px; border-radius: 999px; border: 1px solid transparent;
+  background: rgba(255,255,255,.12); color: #fff; font-size: .92em; }
+button.stat:hover { background: rgba(255,255,255,.22); }
+button.stat[aria-pressed="true"] { background: #fff; color: #071c3d; }
+button.stat:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* without the banner: one line with the title and the same totals, in the theme's own colors */
+.slim { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 18px; }
+.slim h1 { margin: 0; font-size: 1.5em; }
+.slim .stats { margin: 0; }
+.slim .stat { background: var(--card); color: var(--vscode-foreground); border-color: var(--line); }
+.slim button.stat:hover { background: var(--hover); }
+.slim button.stat[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.slim button.stat:focus-visible { outline-color: var(--vscode-focusBorder); }
+
+/* search stays in view while the list scrolls */
+.find { position: sticky; top: 0; z-index: 3; background: var(--vscode-editor-background); padding: 16px 0 12px; display: flex; gap: 10px; align-items: center; }
+.find input { flex: 1 1 auto; min-width: 0; font: inherit; font-size: 1.1em; padding: 9px 14px; border-radius: 8px; color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, var(--line)); }
+.find input:focus { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.find .btn { white-space: nowrap; padding: 8px 14px; }
+.hint { color: var(--muted); font-size: .88em; white-space: nowrap; }
+
+.sec { margin-top: 18px; }
+.sec > .head { display: flex; align-items: center; gap: 9px; margin: 0 0 9px; }
+.fold { display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--vscode-foreground); padding: 3px 8px 3px 4px; border-radius: 6px; }
+.fold:hover { background: var(--hover); }
+.fold:focus-visible { outline: 2px solid var(--vscode-focusBorder); }
+.fold h2 { margin: 0; font-size: 1.05em; }
+.fold .chev { width: 12px; color: var(--muted); font-size: .85em; }
+.fold .n, .sub .n { color: var(--muted); font-size: .9em; font-weight: normal; }
+.fold[class*="c-"] h2::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; background: var(--c); }
+.sec > .head .line, .allhead .line { flex: 1 1 auto; height: 1px; background: var(--line); }
+.sec > .head a, .allhead a { font-size: .9em; }
+.sec.closed { margin-top: 8px; }
+.sec.closed > .head { margin-bottom: 0; }
+.allhead { display: flex; align-items: center; gap: 9px; margin: 26px 0 -6px; font-size: .78em; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.allhead a { text-transform: none; letter-spacing: 0; font-size: 1.15em; }
+.sub { margin: 12px 2px 7px 24px; font-size: .78em; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); display: flex; gap: 8px; }
+.sub + .tiles { margin-left: 24px; }
+
+.c-red { --c: var(--vscode-charts-red, #f85149); } .c-orange { --c: var(--vscode-charts-orange, #d18616); } .c-yellow { --c: var(--vscode-charts-yellow, #d29922); }
+.c-green { --c: var(--vscode-charts-green, #3fb950); } .c-blue { --c: var(--vscode-charts-blue, #1f6feb); } .c-purple { --c: var(--vscode-charts-purple, #a371f7); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 9px; }
+.tile { position: relative; display: flex; align-items: flex-start; gap: 10px; text-align: left; width: 100%; padding: 10px 12px 10px 14px; border-radius: 9px;
+  border: 1px solid var(--line); background: var(--card); color: var(--vscode-foreground); overflow: hidden; }
+.tile:hover { background: var(--hover); border-color: var(--vscode-focusBorder); }
+.tile:focus-visible { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.tile::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--c, transparent); }
+.tile .dot { margin-top: 7px; }
+.tile .dot.up { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent); }
+.tile .dot.down { background: var(--bad); }
+.tile .dot.unknown { background: transparent; border: 1px solid var(--muted); }
+.tile .a, .tile .d { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .a { font-weight: 600; }
+.tile .d { color: var(--muted); font-size: .9em; }
+.tile .star { color: var(--warn); margin-left: 5px; }
+.tile mark { background: var(--vscode-editor-findMatchHighlightBackground, rgba(234,92,0,.33)); color: inherit; border-radius: 2px; }
+.chips { display: block; }
+.chip { display: inline-block; font-size: .78em; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin: 4px 4px 0 0; }
+/* just used: the host is being opened */
+.tile.busy { border-color: var(--accent); }
+.tile.busy::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--accent); transform-origin: left; }
+
+/* the other ways to connect, the star and the pencil: on hover or keyboard focus */
+.acts { position: absolute; right: 6px; top: 6px; display: none; gap: 4px; }
+.tile:hover .acts, .tile:focus-visible .acts, .tile:focus-within .acts { display: flex; }
+.act { font-size: .8em; padding: 1px 8px; border-radius: 5px; border: 1px solid var(--line); background: var(--vscode-editor-background); color: var(--vscode-foreground); cursor: pointer; white-space: nowrap; }
+.act:hover { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.act.icon { padding: 1px 6px; }
+.act.icon.on { color: var(--warn); }
+
+/* compact: one line per host */
+.home.compact .tiles { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 5px; }
+.home.compact .tile { padding: 5px 10px 5px 12px; border-radius: 7px; align-items: center; }
+.home.compact .tile .dot { margin-top: 0; }
+.home.compact .tile .grow { display: flex; gap: 10px; align-items: baseline; }
+.home.compact .tile .a { flex: 0 1 auto; }
+.home.compact .tile .d { flex: 1 1 0; }
+.home.compact .chips { display: none; }
+.home.compact .acts { top: 3px; }
+.home.compact .sec { margin-top: 12px; }
+
+.empty { text-align: center; padding: 10px 0 0; }
+.empty img { width: 100%; max-width: 380px; border-radius: 12px; display: block; margin: 0 auto 18px; }
+.empty .row { justify-content: center; }
+.none { color: var(--muted); padding: 26px 2px; }
+
+.homefoot { margin-top: 30px; padding-top: 16px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; }
+.homefoot .grow { color: var(--muted); font-size: .92em; min-width: 240px; }
+
+#toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 12px); opacity: 0; pointer-events: none; z-index: 5; padding: 7px 16px; border-radius: 999px;
+  background: var(--vscode-notifications-background, var(--card)); color: var(--vscode-notifications-foreground, var(--vscode-foreground));
+  border: 1px solid var(--vscode-notifications-border, var(--line)); box-shadow: 0 4px 14px rgba(0,0,0,.28); max-width: 90vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 900px) {
+  .hint { display: none; }
+}
+@media (max-width: 640px) {
+  .home { padding: 14px 14px 32px; }
+  .banner { height: 170px; }
+  .banner .shade { background: rgba(7,28,61,.8); }
+  .find { flex-wrap: wrap; }
+  .find input { flex-basis: 100%; }
+  .sub, .sub + .tiles { margin-left: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tile, .fold, .stat { transition: background .12s, border-color .12s; }
+  #toast { transition: opacity .15s, transform .15s; }
+  .tile.busy::after { animation: going 2.6s ease-out both; }
+  @keyframes going { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+}

@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased
+
+**New**
+
+- **SSH Home**: a home page with every host one click away. Favorites and the hosts you connected to
+  last come first (with how long ago), then each folder with its subfolders, and the up / down dot on
+  every host. The search box has the focus: type a name, address, tag, folder or provider and press
+  Enter. Point at a host for the other ways to connect, a star to make it a favorite and a pencil to
+  edit it. Click **up** or **down** in the banner to see only those hosts, and a folder's name to fold
+  it away. Arrow keys move between hosts, Ctrl/Cmd+Enter opens a terminal, `/` goes back to the search
+- The home page **opens by itself when the editor starts** in a window with no folder open. Open it
+  any time with **SSH Manager: Home** or from the Hosts panel's **⋯** menu
+- **Settings → Home page**: when it opens, what a click does, a compact size with one line per host,
+  the banner on or off, how many recent hosts to show, and a button to forget them. Also as
+  `sshManager.startPage.*` settings. The setup wizard has a step for it
+- New illustrations for the home page
+
+**Lighter**
+
+- The download is about a third smaller: the illustrations are saved smaller with no visible
+  difference, and a picture no screen used is gone
+- Starting up is measured in the release tests and has to stay under 400 ms (it takes about 5 ms)
+- A status check recolors the dots on the home page in place instead of drawing the list again, and
+  the page uses no memory while its tab is in the background
+
+**Releases**
+
+- `npm version` now turns the "Unreleased" heading into the version number, and the release workflow
+  refuses to publish without it (0.7.0 and 0.7.1 shipped with the heading still saying "Unreleased").
+  The GitHub Release text is now this file's section for the version
+- Open VSX: published with trusted publishing, like the Marketplace; README badges for Open VSX
+
 ## 0.7.1
 
 - **Quick connect** list: the big emoji dots are gone. Each row keeps its place in the folder tree and

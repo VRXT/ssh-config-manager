@@ -25,6 +25,7 @@ OpenSSH ignores, so `ssh`, Remote-SSH and every other tool keep working exactly 
 
 ## What you get
 
+- **A home page** that opens when you start the editor: every host one click away, favorites and recent ones first
 - **Folders and subfolders** for your hosts, with icons, colors, tags, notes and favorites
 - **Search** as you type, plus one-click filters by tag, provider and folder
 - **Connect** in a terminal or through Remote-SSH, straight into a folder on the server if you like
@@ -87,6 +88,36 @@ HostName, User, Port, several IdentityFiles, ProxyJump, a remote folder, and any
 Only that host's lines are rewritten; every other line of the file is kept byte for byte.
 
 ![Host editor form](images/edit-host.png)
+
+## SSH Home: your hosts when the editor opens
+
+A home page with every host one click away. It opens by itself when you start the editor in a window
+with no folder open, which is the moment you are about to go somewhere.
+
+![SSH Home: favorites and recent hosts first, then every folder, with a status dot on each host](images/home.png)
+
+- **Favorites** and the hosts you **connected to last** come first, then every folder with its subfolders
+- Each host shows its address, provider, tags and its **up / down dot**
+- The **search box has the focus**: type a name, address, tag, folder or provider and press **Enter**
+- **One click connects.** The other ways (terminal, this window, new window) show when you point at a
+  host, next to a **star** to make it a favorite and a **pencil** to edit it
+- Click **up** or **down** in the banner to see only those hosts; click a folder's name to fold it away
+  (the page remembers which ones)
+
+| Key | |
+|---|---|
+| Type anywhere | Search |
+| `Enter` | Connect to the first result, or to the host that has the focus |
+| `Ctrl+Enter` / `Cmd+Enter` | Connect in a terminal instead |
+| Arrow keys | Move between hosts |
+| `/` | Back to the search box |
+| `Esc` | Clear the search and the up / down filter |
+
+**Make it yours** in **Settings → Home page**: when it opens (no folder open, every window, or never),
+what a click does, a compact size with one line per host, the banner on or off, and how many recent
+hosts to show. It never opens by itself in a window that is already connected to a server.
+
+Open it any time with **SSH Manager: Home** in the Command Palette, or **⋯ → Home** in the Hosts panel.
 
 ## Connect your way
 
@@ -248,6 +279,11 @@ file to your other computers. A few belong to the computer and live in VS Code's
 | `sshManager.backup.keep` | `30` | How many backups to keep |
 | `sshManager.sync.mode` | `off` | `off`, `copy`, `link` or `include` (set it with the sync setup, not by hand) |
 | `sshManager.sync.file` | | The shared file in your synced folder |
+| `sshManager.startPage.open` | `emptyWindow` | When the home page opens by itself: `emptyWindow`, `always` or `never` |
+| `sshManager.startPage.click` | `panel` | What a click on the home page does: `panel` (same as the Hosts panel), `newWindow`, `window` or `terminal` |
+| `sshManager.startPage.density` | `comfortable` | `comfortable` or `compact` (one line per host) |
+| `sshManager.startPage.banner` | `true` | The picture and totals at the top of the home page |
+| `sshManager.startPage.recent` | `8` | How many recent hosts the home page shows: `0`, `4`, `8` or `12` |
 
 ## Keyboard shortcuts
 

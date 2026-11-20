@@ -13,7 +13,10 @@ exports.run = async function run() {
   await vscode.workspace.getConfiguration('sshManager').update('configFile', file, vscode.ConfigurationTarget.Global);
   const ext = vscode.extensions.getExtension('vrxt.ssh-config-manager');
   assert.ok(ext, 'extension is installed in the dev host');
-  await ext.activate();
+  const api = await ext.activate();
+  // starting up must stay cheap: the extension loads in every window
+  console.log('ACTIVATION_MS ' + api.activationMs);
+  assert.ok(api.activationMs < 400, `activation took ${api.activationMs} ms`);
 
   const all = await vscode.commands.getCommands(true);
   for (const c of ext.packageJSON.contributes.commands) {
@@ -28,6 +31,15 @@ exports.run = async function run() {
   await vscode.commands.executeCommand('sshManager.addHost');
   await new Promise(r => setTimeout(r, 1500));
   await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+
+  // the home page opens, its settings section opens, and neither writes to the config
+  await vscode.commands.executeCommand('sshManager.home');
+  await new Promise(r => setTimeout(r, 1500));
+  await vscode.commands.executeCommand('sshManager.settingsPage', 'home');
+  await new Promise(r => setTimeout(r, 1200));
+  await vscode.commands.executeCommand('sshManager.clearRecentHosts');
+  await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  assert.strictEqual(read(), before, 'opening the home page and its settings never writes');
 
   console.log('SMOKE OK');
 };

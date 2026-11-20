@@ -19,11 +19,14 @@ import { folderProblem, sshInFolder } from './remote';
 import { findRemoteProvider, suggestedProvider } from './remoteProvider';
 import { SearchViewProvider } from './searchView';
 import { DotStatus, Theme, folderStatus, statusIconName, statusIconSvg } from './statusIcon';
+import { opensOnStartup } from './startModel';
+import { StartPage } from './startPage';
 import { Store, collapseHome, expandHome } from './store';
 import { SyncController } from './syncController';
 import { COLORS, HostTree, ICONS, Node, autoIcon, hostDetail, hostSummary, isFav } from './tree';
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext): { activationMs: number } {
+  const started = Date.now();
   // Created first, with a fixed id, so nothing later in activation can keep it from showing
   // and VS Code remembers whether the user hid it (status bar context menu).
   const status = vscode.window.createStatusBarItem('sshManager.status', vscode.StatusBarAlignment.Left, 10000);
@@ -66,7 +69,6 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     health,
     health.onDidChange(() => tree.redraw()),
-    view.onDidChangeVisibility(e => health.setVisible(e.visible)),
     vscode.workspace.onDidChangeConfiguration(e => e.affectsConfiguration('sshManager.health.animation') && tree.redraw()),
   );
 
@@ -268,6 +270,7 @@ export function activate(context: vscode.ExtensionContext): void {
       );
       return;
     }
+    home.noteConnected(h);
     // start in the host's remote folder when it has one
     await runLocal(h.alias, sshInFolder(cmd, h.attrs.folder ?? '', !!option(h, 'RemoteCommand')));
   };
@@ -292,6 +295,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       return;
     }
+    home.noteConnected(h);
     const folder = (h.attrs.folder ?? '').trim();
     if (folder && !folderProblem(folder)) {
       // straight into the host's folder instead of an empty remote window
@@ -301,6 +305,28 @@ export function activate(context: vscode.ExtensionContext): void {
     }
     await vscode.commands.executeCommand('vscode.newWindow', { remoteAuthority: `ssh-remote+${name}`, reuseWindow });
   };
+
+  // ---- home page: every host one click away, opened when a window starts
+
+  const home = new StartPage(context, store, {
+    terminal: h => connectTerminal(h),
+    window: h => connectRemote(h, true),
+    newWindow: h => connectRemote(h, false),
+    edit: h => openHostEditor(store, h.id),
+    toggleFavorite: h => store.mutate(d => setHostAttrs(d, h.id, { fav: h.attrs.fav && h.attrs.fav !== '0' ? undefined : '1' })),
+    status: name => health.get(name)?.status,
+    recheck: () => health.check(),
+  });
+  // status checks run while either the Hosts panel or the home page is on screen
+  const watching = () => health.setVisible(view.visible || home.visible);
+  context.subscriptions.push(
+    home,
+    home.onDidChangeVisibility(watching),
+    view.onDidChangeVisibility(watching),
+    health.onDidChange(() => home.refresh()),
+    vscode.commands.registerCommand('sshManager.home', () => home.show()),
+    vscode.commands.registerCommand('sshManager.clearRecentHosts', () => home.clearRecent()),
+  );
 
   // ---- commands
 
@@ -1096,11 +1122,21 @@ export function activate(context: vscode.ExtensionContext): void {
     await store.mutate(d => deleteContainer(d, c.id));
   });
 
+  // the home page, when this window is one it should open in (see `sshManager.startPage.open`)
+  const firstRun = !context.globalState.get<boolean>('wizard.shown');
+  if (opensOnStartup(home.mode, { folders: vscode.workspace.workspaceFolders?.length ?? 0, remote: !!vscode.env.remoteName, firstRun })) {
+    // quiet when files are already open, so it never takes the keyboard away from one
+    home.show(vscode.window.visibleTextEditors.length > 0);
+  }
+
   // first run on this computer: the setup wizard, once (it can be reopened from the ⋯ menu)
   if (!context.globalState.get<boolean>('wizard.shown')) {
     void context.globalState.update('wizard.shown', true);
     setTimeout(() => panels.showWizard(), 800);
   }
+
+  // how long starting up took, for the tests that keep it small
+  return { activationMs: Date.now() - started };
 }
 
 export function deactivate(): void {

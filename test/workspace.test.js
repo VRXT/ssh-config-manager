@@ -322,15 +322,15 @@ test('manifest: menus, guide and screens only point at things that exist', () =>
     }
     assert.ok(commands.has(step.completionEvents[0].replace('onCommand:', '')));
   }
-  for (const name of ['hero', 'welcome', 'folders', 'picker', 'backup', 'sync', 'keys', 'shortcuts', 'settings', 'done']) {
+  for (const name of ['welcome', 'folders', 'picker', 'backup', 'sync', 'keys', 'shortcuts', 'settings', 'done', 'start', 'start-empty']) {
     assert.ok(fs.existsSync(path.join(root, 'media', 'art', name + '.jpg')), name);
   }
-  for (const f of ['ui.css', 'components.js', 'settings.js', 'wizard.js']) {
+  for (const f of ['ui.css', 'start.css', 'components.js', 'settings.js', 'wizard.js', 'start.js']) {
     assert.ok(fs.existsSync(path.join(root, 'media', 'ui', f)), f);
   }
   // the screens ask the extension only for commands it has
   const used = new Set();
-  for (const f of ['components.js', 'settings.js', 'wizard.js']) {
+  for (const f of ['components.js', 'settings.js', 'wizard.js', 'start.js']) {
     for (const [, id] of fs.readFileSync(path.join(root, 'media', 'ui', f), 'utf8').matchAll(/id: '(sshManager\.[A-Za-z]+)'/g)) {
       used.add(id);
     }

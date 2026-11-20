@@ -6,6 +6,8 @@ import { HEALTH_METHODS, intervalSeconds } from './health';
 import { missingKeys } from './keys';
 import { SHORTCUTS, keyCaps } from './shortcuts';
 import { pickerFormatting, setPickerFormatting, setSettings } from './sshConfig';
+import { readRecent } from './startModel';
+import { RECENT_KEY, setStartSetting, startSettings } from './startPage';
 import { Store, collapseHome } from './store';
 import { SYNC_MODES, SyncMode } from './sync';
 import { SyncController } from './syncController';
@@ -138,6 +140,7 @@ export class Panels implements vscode.Disposable {
         animation: vscode.workspace.getConfiguration('sshManager').get<boolean>('health.animation') !== false,
         interval: intervalSeconds(vscode.workspace.getConfiguration('sshManager').get('health.interval') ?? 300),
       },
+      home: { ...startSettings(), recentCount: readRecent(this.context.globalState.get(RECENT_KEY)).length, panelClick: doc.settings.click ?? 'none' },
       shortcuts: SHORTCUTS.map(s => ({ label: s.label, caps: keyCaps(s, process.platform), where: s.where, group: s.group })),
     };
   }
@@ -177,6 +180,9 @@ export class Panels implements vscode.Disposable {
         }
         return;
       }
+      case 'home':
+        await setStartSetting(String(msg.key), msg.value);
+        return;
       case 'backupNow':
         await vscode.commands.executeCommand('sshManager.backupNow');
         return;
@@ -235,6 +241,7 @@ export class Panels implements vscode.Disposable {
         const id = String(msg.id);
         if (/^sshManager\.[A-Za-z]+$/.test(id)) {
           await vscode.commands.executeCommand(id);
+          this.post(); // some commands change what this page shows without touching the config
         }
         return;
       }
