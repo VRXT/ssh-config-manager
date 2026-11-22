@@ -123,9 +123,21 @@ function section(title, hosts, opts) {
 
 const everyHost = m => [...m.folders.flatMap(f => [...f.hosts, ...f.subfolders.flatMap(s => s.hosts)]), ...m.loose, ...m.included.flatMap(i => i.hosts)];
 
+/** The config file cannot be read right now: say why, and keep the hosts that were read last below it. */
+function trouble() {
+  return el('div', { class: 'note' }, el('b', {}, S.errorTitle || 'The config file could not be read'), S.error,
+    el('div', { class: 'row wrap gap-t' },
+      btn('Try Again', () => send('command', { id: 'sshManager.refresh' })),
+      btn('Show Details', () => send('command', { id: 'sshManager.showLog' }), 'ghost')));
+}
+
 function list() {
+  if (!S.error) return hosts();
+  return S.model.total ? [trouble(), hosts()] : trouble();
+}
+
+function hosts() {
   const m = S.model;
-  if (S.error) return el('div', { class: 'note' }, el('b', {}, 'The config file could not be read'), S.error);
   if (!m.total) {
     return el('div', { class: 'empty' },
       el('img', { src: S.art.empty, alt: '' }),

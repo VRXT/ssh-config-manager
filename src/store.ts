@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Backup, backupDir, listBackups, writeBackup } from './backups';
+import { ReadProblem, explainReadError, problemReport, readText } from './readFile';
 import { Doc, finalize, parse } from './sshConfig';
 import { hasInclude } from './sync';
 
@@ -27,13 +28,20 @@ export class Store implements vscode.Disposable {
 
   doc: Doc = parse('');
   included: Doc[] = [];
+  /** set while the config file cannot be read: one line for a message */
   error: string | undefined;
+  /** the same, with the likely reason and what to do about it */
+  problem: ReadProblem | undefined;
 
   private watched: string | undefined;
   private lastText = '';
+  /** the file the current hosts were read from, when that read worked */
+  private loaded: string | undefined;
+  private retryTimer: ReturnType<typeof setTimeout> | undefined;
+  private retries = 0;
 
   /** `legacyBackupDir`: where versions before 0.6 kept backups; still listed for restore. */
-  constructor(private readonly legacyBackupDir: string) {
+  constructor(private readonly legacyBackupDir: string, private readonly log: (line: string) => void = () => undefined) {
     this.reload();
   }
 
@@ -76,19 +84,55 @@ export class Store implements vscode.Disposable {
   reload(): void {
     const file = this.configPath;
     this.watch(file);
+    clearTimeout(this.retryTimer);
+    this.retryTimer = undefined;
+    const before = this.problem;
     let text = '';
     this.error = undefined;
+    this.problem = undefined;
     try {
-      text = fs.readFileSync(file, 'utf8');
+      text = readText(file);
     } catch (e: any) {
       if (e?.code !== 'ENOENT') {
-        this.error = String(e?.message ?? e);
+        this.problem = explainReadError(e, file, this.realPath(file), collapseHome);
+        this.error = `${this.problem.title}. ${this.problem.why}`;
       }
+    }
+    if (this.problem) {
+      if (!before || before.code !== this.problem.code) {
+        for (const line of problemReport(this.problem)) {
+          this.log(line);
+        }
+      }
+      // A file in a cloud folder is often back a moment later: look again by itself, less and
+      // less often (2 s, 5 s, 15 s, then every 30 s). The watcher only notices a changed file.
+      const wait = [2000, 5000, 15000][this.retries] ?? 30000;
+      this.retries++;
+      this.retryTimer = setTimeout(() => this.reload(), wait);
+      if (this.loaded === file) {
+        // keep showing the hosts that were read last: an unreadable file is not an empty one
+        this.changed.fire();
+        return;
+      }
+    } else {
+      if (before) {
+        this.log(`${collapseHome(file)} can be read again.`);
+      }
+      this.retries = 0;
+      this.loaded = file;
     }
     this.lastText = text;
     this.doc = parse(text, file);
     this.included = this.loadIncludes(this.doc, file);
     this.changed.fire();
+  }
+
+  private realPath(file: string): string {
+    try {
+      return fs.realpathSync(file);
+    } catch {
+      return file;
+    }
   }
 
   /** Re-reads the file, applies `edit` to the fresh contents, backs up, writes. */
@@ -175,7 +219,7 @@ export class Store implements vscode.Disposable {
           continue;
         }
         try {
-          const d = parse(fs.readFileSync(file, 'utf8'), file, true);
+          const d = parse(readText(file), file, true);
           if (d.hosts.length) {
             out.push(d);
           }
@@ -208,13 +252,14 @@ export class Store implements vscode.Disposable {
     this.watched = file;
     // polling survives symlinks and cloud-synced folders, where fs.watch is unreliable
     fs.watchFile(file, { interval: 1500 }, () => {
-      let text = '';
+      let text: string | undefined = '';
       try {
-        text = fs.readFileSync(file, 'utf8');
-      } catch {
-        // deleted
+        text = readText(file);
+      } catch (e: any) {
+        // deleted = empty; anything else = could not look, which reload() reports
+        text = e?.code === 'ENOENT' ? '' : undefined;
       }
-      if (text !== this.lastText) {
+      if (text !== this.lastText || this.problem) {
         this.reload();
       }
     });
@@ -228,6 +273,7 @@ export class Store implements vscode.Disposable {
   }
 
   dispose(): void {
+    clearTimeout(this.retryTimer);
     this.unwatch();
     this.changed.dispose();
     this.autoFormatted.dispose();

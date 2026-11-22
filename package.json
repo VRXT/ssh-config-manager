@@ -337,6 +337,11 @@
         "icon": "$(new-folder)"
       },
       {
+        "command": "sshManager.showLog",
+        "title": "Show Log",
+        "category": "SSH Manager"
+      },
+      {
         "command": "sshManager.refresh",
         "title": "Refresh",
         "category": "SSH Manager",
@@ -733,6 +738,11 @@
           "command": "sshManager.checkKeys",
           "when": "view == sshManager.hosts",
           "group": "2_data@4"
+        },
+        {
+          "command": "sshManager.showLog",
+          "when": "view == sshManager.hosts",
+          "group": "3_help@0"
         },
         {
           "command": "sshManager.shortcuts",
@@ -6138,7 +6148,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js && node test/doctor.test.js && node test/health.test.js && node test/start.test.js",
+    "test": "npm run compile && node test/parser.test.js && node test/features.test.js && node test/workspace.test.js && node test/doctor.test.js && node test/health.test.js && node test/start.test.js && node test/readfile.test.js",
     "vscode:prepublish": "npm run compile",
     "version": "node scripts/changelog.js stamp && git add CHANGELOG.md",
     "package": "vsce package",

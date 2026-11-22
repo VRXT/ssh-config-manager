@@ -37,7 +37,11 @@ export function activate(context: vscode.ExtensionContext): { activationMs: numb
   status.show();
   context.subscriptions.push(status);
 
-  const store = new Store(vscode.Uri.joinPath(context.globalStorageUri, 'backups').fsPath);
+  // the log: what went wrong and what to do about it, for "Show Details" and for bug reports
+  const output = vscode.window.createOutputChannel('SSH Config Manager');
+  context.subscriptions.push(output);
+  const log = (line: string) => output.appendLine(`${new Date().toLocaleTimeString()}  ${line}`);
+  const store = new Store(vscode.Uri.joinPath(context.globalStorageUri, 'backups').fsPath, log);
   const tree = new HostTree(store);
   const view = vscode.window.createTreeView('sshManager.hosts', {
     treeDataProvider: tree,
@@ -88,8 +92,48 @@ export function activate(context: vscode.ExtensionContext): { activationMs: numb
 
   const refreshChrome = () => {
     view.description = tree.filtered ? `filter: ${describeFilter(tree.currentFilter)}` : undefined;
-    view.message = store.error ? `Cannot read ${store.configPath}: ${store.error}` : undefined;
+    const p = store.problem;
+    view.message = p ? `${p.title}. ${p.why}${p.retrying ? ' Trying again by itself…' : ''} Details: ⋯ → Show Log.` : undefined;
   };
+  // Tell once per problem, with a way to act. A file that is only briefly unavailable (a cloud
+  // folder catching up) is read again by itself; say so only if it is still unreadable a moment later.
+  let told = false;
+  let tellTimer: ReturnType<typeof setTimeout> | undefined;
+  const tellProblem = () => {
+    if (!store.problem) {
+      told = false;
+      clearTimeout(tellTimer);
+      tellTimer = undefined;
+      return;
+    }
+    if (told || tellTimer) {
+      return;
+    }
+    tellTimer = setTimeout(async () => {
+      tellTimer = undefined;
+      const p = store.problem;
+      if (!p || told) {
+        return;
+      }
+      told = true;
+      const retry = 'Try Again';
+      const details = 'Show Details';
+      const pick = await vscode.window.showWarningMessage(`SSH Config Manager: ${p.title}. ${p.why}`, retry, details);
+      if (pick === retry) {
+        store.reload();
+        if (store.problem) {
+          told = false;
+        } else {
+          vscode.window.setStatusBarMessage('SSH config read again.', 4000);
+        }
+      } else if (pick === details) {
+        output.show(true);
+      }
+    }, store.problem.retrying ? 6000 : 300);
+  };
+  context.subscriptions.push({ dispose: () => clearTimeout(tellTimer) });
+  store.onDidChange(tellProblem);
+  tellProblem();
   store.onDidChange(refreshChrome);
   tree.onDidChangeFilter(refreshChrome);
   refreshChrome();
@@ -339,6 +383,7 @@ export function activate(context: vscode.ExtensionContext): { activationMs: numb
     );
   const regPlain = (id: string, fn: (...args: any[]) => unknown) => context.subscriptions.push(vscode.commands.registerCommand(id, fn));
 
+  regPlain('sshManager.showLog', () => output.show(true));
   reg('sshManager.refresh', () => {
     store.reload();
     void health.check();

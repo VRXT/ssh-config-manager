@@ -137,7 +137,8 @@ export class StartPage implements vscode.Disposable {
       opts: o,
       collapsed: Array.isArray(collapsed) ? collapsed.filter(x => typeof x === 'string') : [],
       config: collapseHome(store.configPath),
-      error: store.error ?? '',
+      error: store.problem ? store.problem.why + (store.problem.retrying ? ' Trying again by itself.' : '') : '',
+      errorTitle: store.problem?.title ?? '',
       mac: process.platform === 'darwin',
     };
   }
@@ -189,7 +190,7 @@ export class StartPage implements vscode.Disposable {
         await vscode.commands.executeCommand('sshManager.settingsPage', 'home');
         return;
       case 'command': {
-        const allowed = ['sshManager.addHost', 'sshManager.addGroup', 'sshManager.wizard', 'sshManager.openConfig', 'sshManager.hosts.focus'];
+        const allowed = ['sshManager.refresh', 'sshManager.showLog', 'sshManager.addHost', 'sshManager.addGroup', 'sshManager.wizard', 'sshManager.openConfig', 'sshManager.hosts.focus'];
         if (allowed.includes(String(msg.id))) {
           await vscode.commands.executeCommand(String(msg.id));
         }

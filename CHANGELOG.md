@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+For a config file in OneDrive, iCloud Drive, Dropbox or another synced folder:
+
+- "Cannot read … EINTR: interrupted system call" no longer appears when the sync app is busy with
+  the file for a moment: the read is tried again by itself
+- If the file still cannot be read, your hosts stay on screen instead of the list going empty, and
+  the extension keeps trying until the file is back
+- The message now says in plain words what is wrong and what to do (the sync app is not running, the
+  file is not downloaded, the editor has no permission, …), with **Try Again** and **Show Details**
+- New: **SSH Manager: Show Log** (also under **⋯** in the Hosts panel) shows what went wrong, with the
+  real location of a linked file and the system's own message, ready to copy into a bug report
+
 ## 0.8.2
 
 - Home page: a host with a color of its own is now tinted in that color, in place of the stripe on its left edge
