@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.8.3
 
 For a config file in OneDrive, iCloud Drive, Dropbox or another synced folder:
 
